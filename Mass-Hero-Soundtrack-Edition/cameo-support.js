@@ -5,8 +5,8 @@
   const ROSTER=[
     {id:"narasimha",name:"Narasimha",ability:"Sniper Support",description:"Lock a target. Off-screen sniper rounds instantly eliminate normal enemies.",color:"#b8e39a",frame:0},
     {id:"mathew",name:"Mathew",ability:"Vehicular Impact",description:"A heavy SUV sweeps the street, crushing enemy groups in its path.",color:"#ffb183",frame:1},
-    {id:"hrithik",name:"Hrithik",ability:"Avatar Assault",description:"Three female combat companions pursue, punch, kick and fire on nearby enemies.",color:"#d5adff",frame:2},
-    {id:"pragi",name:"Pragi",ability:"Sonic Lightning",description:"Broad lightning shockwaves damage and stun surrounding normal enemies.",color:"#89eaff",frame:3}
+    {id:"hrithik",name:"Hrithik",ability:"Strike Team",description:"Hrithik lays down rifle bursts while three female fighters rush in with punches and kicks.",color:"#d5adff",frame:2},
+    {id:"pragi",name:"Pragi",ability:"Martial Arts",description:"Pragi runs into close combat with flowing jabs, crosses, elbows and roundhouse kicks.",color:"#89eaff",frame:3}
   ];
   const isMob=e=>!!e&&!e.dead&&["grunt","heavy","minion"].includes(e.type)&&!e.isBoss;
   class CameoSupport{
@@ -23,10 +23,43 @@
       this.used=true;
       this.active={id:this.selected,elapsed:0,remaining:DURATION,nextPulse:this.selected==="narasimha"?.6:.25,effects:[],target:null,
         car:{x:-210,y:Math.max(350,Math.min(490,c.player.y)),face:1,hits:new Set()},
-        agents:Array.from({length:3},(_,i)=>({x:c.player.x-45+i*28,y:c.player.y-24+i*24,face:c.player.face,cooldown:0,attacking:0}))};
+        fighter:this.actor(c.player.x+35,c.player.y,c.player.face),
+        gunner:{x:c.player.x-85,y:c.player.y,face:c.player.face,cooldown:0,recoil:0,burst:0},
+        agents:Array.from({length:3},(_,i)=>this.actor(c.player.x-45+i*28,c.player.y-24+i*24,c.player.face))};
       this.emit({kind:"summon",id:this.selected,x:c.player.x,y:c.player.y});return true;
     }
     damage(e,amount,c){if(!this.active||c.phase!=="wave"||c.mode!=="playing"||c.transition||!isMob(e))return false;this.dealDamage(e,amount);return true;}
+    actor(x,y,face){return {x,y,face,vx:0,vy:0,moving:false,walk:0,cooldown:0,attacking:0,combo:0,struck:false,targetId:null};}
+    martial(actor,index,dt,c,damage,laneOffset=0){
+      actor.cooldown=Math.max(0,actor.cooldown-dt);actor.walk+=dt*14;
+      const mobs=this.targets(c).sort((a,b)=>Math.hypot(a.x-actor.x,a.y-actor.y)-Math.hypot(b.x-actor.x,b.y-actor.y));
+      const target=mobs.find(e=>e.id===actor.targetId)||mobs[index%Math.max(1,mobs.length)];
+      const dx=(target?target.x:c.player.x+45+index*25)-actor.x,dy=(target?Math.max(340,Math.min(500,target.y+laneOffset)):c.player.y)-actor.y;
+      actor.moving=false;
+      if(actor.attacking>0){
+        const before=actor.attacking;actor.attacking=Math.max(0,actor.attacking-dt);
+        if(!actor.struck&&before>.23&&actor.attacking<=.23){
+          actor.struck=true;const kick=actor.combo===2;
+          for(const e of this.targets(c))if(Math.abs(e.x-actor.x)<(kick?100:76)&&Math.abs(e.y-actor.y)<42&&(e.x-actor.x)*actor.face> -18){
+            this.damage(e,damage*(kick?1.45:1),c);e.stun=Math.max(e.stun||0,kick?.36:.18);
+            this.active.effects.push({kind:"contact",x:e.x,y:e.y-60,age:0,duration:.13});
+            this.emit({kind:"melee",x:e.x,y:e.y-60,kick});
+          }
+        }
+        actor.vx*=Math.exp(-18*dt);actor.vy*=Math.exp(-18*dt);
+      }else{
+        actor.face=dx>=0?1:-1;
+        const distance=Math.hypot(dx,dy),chasing=distance>56;
+        const speed=450,blend=1-Math.exp(-18*dt);
+        actor.vx+=((chasing?dx/(distance||1)*speed:0)-actor.vx)*blend;
+        actor.vy+=((chasing?dy/(distance||1)*speed:0)-actor.vy)*blend;
+        actor.moving=chasing;
+        if(target&&Math.abs(dx)<70&&Math.abs(dy)<34&&actor.cooldown<=0){
+          actor.targetId=target.id;actor.combo=(actor.combo+1)%4;actor.attacking=.4;actor.struck=false;actor.cooldown=.5;
+        }
+      }
+      actor.x=Math.max(20,Math.min(c.width-20,actor.x+actor.vx*dt));actor.y=Math.max(330,Math.min(510,actor.y+actor.vy*dt));
+    }
     update(dt,c){
       const a=this.active;if(!a||c.mode!=="playing"||!Number.isFinite(dt)||dt<=0)return;
       const step=Math.min(dt,DURATION-a.elapsed);let end=Math.min(DURATION,a.elapsed+step);if(DURATION-end<1e-9)end=DURATION;
@@ -53,29 +86,27 @@
             car.x=Math.max(-230,Math.min(c.width+230,car.x));car.face*=-1;car.hits.clear();
             const mobs=this.targets(c);car.y=mobs.length?mobs.reduce((sum,e)=>sum+e.y,0)/mobs.length:c.player.y;
           }
-        }else if(a.id==="hrithik"){
-          a.agents.forEach((agent,i)=>{
-            agent.cooldown=Math.max(0,agent.cooldown-step);agent.attacking=Math.max(0,agent.attacking-step);
-            const mobs=this.targets(c),target=mobs.length?mobs[i%mobs.length]:null;
-            const tx=target?target.x:c.player.x+Math.cos(end*3+i*2)*65,ty=target?target.y:c.player.y+Math.sin(end*3+i*2)*32;
-            const dx=tx-agent.x,dy=ty-agent.y,distance=Math.hypot(dx,dy)||1,range=i===1?260:62;
-            agent.face=dx>=0?1:-1;
-            if(distance>range||!target){const travel=Math.min(distance,520*step);agent.x+=dx/distance*travel;agent.y+=dy/distance*travel;}
-            agent.x=Math.max(20,Math.min(c.width-20,agent.x));agent.y=Math.max(330,Math.min(510,agent.y));
-            if(target&&distance<=range+15&&agent.cooldown<=0){
-              agent.cooldown=i===1?.24:.32;agent.attacking=.18;
-              for(const e of this.targets(c))if(e===target||Math.hypot(e.x-target.x,e.y-target.y)<75)this.damage(e,i===1?23:32,c);
-              a.effects.push({kind:i===1?"bolt":"slash",fromX:agent.x,fromY:agent.y-60,x:target.x,y:target.y-55,age:0,duration:.18,color:ROSTER[2].color});
+        }else if(a.id==="hrithik"||a.id==="pragi"){
+          // Small combat steps preserve contact timing even after a slow browser frame.
+          for(let left=step;left>1e-9;){
+            const tick=Math.min(.025,left);left-=tick;
+            if(a.id==="pragi")this.martial(a.fighter,0,tick,c,48);
+            else{
+              a.agents.forEach((agent,i)=>this.martial(agent,i,tick,c,26,(i-1)*26));
+              const g=a.gunner,mobs=this.targets(c),target=mobs.sort((x,y)=>Math.hypot(x.x-g.x,x.y-g.y)-Math.hypot(y.x-g.x,y.y-g.y))[0];
+              g.cooldown=Math.max(0,g.cooldown-tick);g.recoil=Math.max(0,g.recoil-tick);
+              if(target){
+                g.face=target.x>=g.x?1:-1;
+                const tx=Math.max(35,Math.min(c.width-35,target.x-g.face*210));
+                g.x+=(tx-g.x)*(1-Math.exp(-5*tick));g.y+=(target.y-g.y)*(1-Math.exp(-5*tick));
+                if(g.cooldown<=0){
+                  g.burst=(g.burst+1)%3;g.cooldown=g.burst===0?.7:.12;g.recoil=.09;
+                  this.damage(target,24,c);
+                  a.effects.push({kind:"rifle",fromX:g.x+g.face*48,fromY:g.y-85,x:target.x,y:target.y-60,age:0,duration:.09});
+                  this.emit({kind:"rifle",x:g.x+g.face*48,y:g.y-85});
+                }
+              }
             }
-          });
-        }else if(a.id==="pragi"){
-          while(a.nextPulse<=end&&a.nextPulse<DURATION){
-            const pulse={kind:"shock",x:c.player.x,y:c.player.y-35,age:0,duration:.7};a.effects.push(pulse);
-            for(const e of this.targets(c))if(Math.hypot(e.x-c.player.x,(e.y-c.player.y)*1.2)<=340){
-              if(this.damage(e,85,c)&&!e.dead)e.stun=Math.max(e.stun||0,1.4);
-              a.effects.push({kind:"lightning",fromX:c.player.x,fromY:c.player.y-155,x:e.x,y:e.y-50,age:0,duration:.28});
-            }
-            this.emit({kind:"shock",x:c.player.x,y:c.player.y});a.nextPulse+=1.7;
           }
         }
       }

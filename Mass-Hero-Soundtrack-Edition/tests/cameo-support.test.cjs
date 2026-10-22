@@ -46,13 +46,22 @@ test('Mathew swept vehicle collision damages multiple normal enemies only in its
  const {support,context,hits}=fixture('mathew',[mob(1,200),mob(2,400),mob(3,350,700)]);support.summon(context);support.update(1,context);
  assert.deepEqual(hits.map(h=>h.id),[1,2]);assert.equal(context.enemies[2].hp,100);
 });
-test('Hrithik summons exactly three pursuing combat companions with group attacks',()=>{
- const {support,context,hits}=fixture('hrithik',[mob(1,290,420,2000),mob(2,315,420,2000)]);support.summon(context);assert.equal(support.active.agents.length,3);support.update(.1,context);
- assert(hits.some(h=>h.id===1));assert(hits.some(h=>h.id===2));assert(support.active.agents.every(a=>a.attacking>0));
+test('Hrithik fires rifle bursts while exactly three companions close into melee',()=>{
+ const {support,context,hits,events}=fixture('hrithik',[mob(1,450,420,2000),mob(2,470,420,2000)]);support.summon(context);
+ assert.equal(support.active.agents.length,3);const start=support.active.agents[0].x;
+ for(let i=0;i<40;i++)support.update(.025,context);
+ assert(support.active.agents[0].x>start);assert(hits.some(h=>h.amount===24));assert(hits.some(h=>h.amount===26));assert(events.some(e=>e.kind==='rifle'));assert(events.some(e=>e.kind==='melee'));
 });
-test('Pragi shocks and stuns nearby mobs while leaving distant enemies untouched',()=>{
- const {support,context,hits}=fixture('pragi',[mob(1,300,420,500),mob(2,900,420,500)]);support.summon(context);support.update(.25,context);
- assert.deepEqual(hits,[{id:1,amount:85}]);assert.equal(context.enemies[0].stun,1.4);assert.equal(context.enemies[1].hp,500);
+test('Pragi pursues distant enemies and only lands grounded strikes inside melee range',()=>{
+ const {support,context,hits,events}=fixture('pragi',[mob(1,850,420,5000)]);support.summon(context);
+ support.update(.25,context);assert.equal(hits.length,0);assert(support.active.fighter.x>315);
+ for(let i=0;i<160;i++)support.update(.025,context);
+ assert(hits.length>=3);assert(hits.some(h=>h.amount===48*1.45));assert(events.some(e=>e.kind==='melee'));assert(!events.some(e=>['shock','lightning'].includes(e.kind)));
+ assert(support.active.effects.every(e=>!['shock','lightning'].includes(e.kind)));
+});
+test('Pragi windup allows an enemy to dodge before contact',()=>{
+ const {support,context,hits}=fixture('pragi',[mob(1,350,420,500)]);support.summon(context);support.update(.05,context);
+ assert(support.active.fighter.attacking>0);context.enemies[0].x=900;support.update(.2,context);assert.equal(hits.length,0);
 });
 test('expired and stopped helpers cannot keep dealing damage',()=>{
  const {support,context,hits}=fixture('pragi',[mob(1,300,420,5000)]);support.summon(context);support.update(10,context);const count=hits.length;support.update(10,context);assert.equal(hits.length,count);assert.equal(support.damage(context.enemies[0],10,context),false);support.resetWave(2);support.summon(context);support.stop();support.update(10,context);assert.equal(hits.length,count);

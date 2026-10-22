@@ -12,9 +12,11 @@ python3 Mass-Hero-Soundtrack-Edition/serve.py --port 8000
 
 Choose **Start 3-level campaign**, then select exactly one cameo before entering the continuous run:
 
-1. **Dockyard wave → The Enforcer** — three street enemies, then the bearded fighter with running and heavy punches.
-2. **Mill wave → Kalpak Brother** — five enemies, then the moustached fighter with rush attacks and a defensive guard. Dash attacks bypass his guard.
-3. **Neon wave → Bodhi Kalpak** — six enemies, then the final boss with stronger attacks and an enraged phase.
+1. **Dockyard wave → The Enforcer** — 12 street enemies arriving in groups, then the bearded fighter with running and heavy punches.
+2. **Mill wave → Kalpak Brother** — 18 enemies arriving in groups, then the moustached fighter with rush attacks and a defensive guard. Dash attacks bypass his guard.
+3. **Neon wave → Bodhi Kalpak** — 24 enemies arriving in groups, then the final boss with stronger attacks and an enraged phase.
+
+Only 6/7/8 mobs can be active at once in waves 1/2/3, and at most two normal enemies can wind up attacks together. Reinforcements keep arriving until the full wave is defeated; the HUD counts all remaining hostiles. Mob health, damage and speed rise with the level. Bosses have 340/460/620 health, stronger damage and shorter recovery, with existing telegraphs, guards, rushes and the final enrage retained. Full-energy rocket fatalities still work.
 
 Each boss has distinct reference-based action sprites. Waves, bosses, and levels advance automatically, with no menus or Next Level buttons between fights. In-arena titles, boss entrance zooms, letterboxing, impact pauses, knockout slow motion, and dash/rush trails connect the action while the music continues. Movement remains active during transitions. Defeat a boss to gain 30 health and carry your energy and score into the next wave. A defeat lets you retry the current wave or boss with full health and the score earned before that phase. **Restart** resets the campaign. **Quick duel: Bodhi Kalpak** retains the direct final-boss fight. Character animations must load before the fight starts; a failed download offers a retry instead of silently displaying a static character.
 
@@ -24,8 +26,8 @@ Choose **Narasimha**, **Mathew**, **Hrithik**, or **Pragi** before each new game
 
 - **Narasimha — Sniper Support:** off-screen shots instantly eliminate targeted normal enemies. Press **T**, tap **Target**, or click a normal enemy in the arena to set the sniper target.
 - **Mathew — Vehicular Impact:** a heavy SUV drives across the arena, damaging groups in its lane.
-- **Hrithik — Avatar Assault:** three female tactical companions pursue enemies with punches, kicks, and energy shots.
-- **Pragi — Sonic Lightning:** broad shockwaves damage and stun normal enemies in range.
+- **Hrithik — Strike Team:** Hrithik aims and fires three-round rifle bursts while three female tactical fighters pursue enemies with close-range punches and kicks.
+- **Pragi — Martial Arts:** Pragi runs toward targets and chains jabs, crosses, elbows and roundhouse kicks. Strikes land after a visible windup and require physical contact; there are no lightning or shockwave powers.
 
 Press **C** or tap **Summon** for one assist per normal wave. Each assist stays for exactly **10 unpaused seconds**, independent of combat slow motion or impact pauses. The timer and charge are displayed beneath the arena. A fresh wave restores the summon charge. If an assist clears the wave early, it stays on station until its 10-second extraction before the boss arrives.
 

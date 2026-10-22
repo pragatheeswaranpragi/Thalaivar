@@ -270,11 +270,11 @@
       const musicFiles = {fight:"assets/jailer2-theme.mp3",lost:"assets/netru-ponavai.mp3",victory:"assets/victory-reference-bgm.m4a"};
       let uid = 0;
       let campaignMode=true, spriteStatus="loading", checkpointScore=0, checkpointPhase="wave";
-      let phase="wave", transition=null, entranceTimer=0;
+      let phase="wave", transition=null, entranceTimer=0, reinforcementQueue=[], reinforcementTimer=0, waveTotal=0;
       const LEVELS=[
-        {name:"THE ENFORCER",arena:"DOCKYARD AMBUSH",hp:210,speed:165,damage:13,cooldown:1.5,sky:["#0d2631","#29575b","#8eae98"],ground:"#29464a",sign:"DOCKS"},
-        {name:"KALPAK BROTHER",arena:"MILL LOCKDOWN",hp:280,speed:185,damage:16,cooldown:1.3,sky:["#241624","#61394a","#d49465"],ground:"#47363d",sign:"MILL"},
-        {name:"BODHI KALPAK",arena:"NEON RECKONING",hp:360,speed:200,damage:19,cooldown:1.15,sky:["#10182b","#40304f","#e47975"],ground:"#414152",sign:"ARCADE"}
+        {name:"THE ENFORCER",arena:"DOCKYARD AMBUSH",hp:340,speed:180,damage:17,cooldown:1.22,sky:["#0d2631","#29575b","#8eae98"],ground:"#29464a",sign:"DOCKS"},
+        {name:"KALPAK BROTHER",arena:"MILL LOCKDOWN",hp:460,speed:205,damage:21,cooldown:1.08,sky:["#241624","#61394a","#d49465"],ground:"#47363d",sign:"MILL"},
+        {name:"BODHI KALPAK",arena:"NEON RECKONING",hp:620,speed:220,damage:25,cooldown:.95,sky:["#10182b","#40304f","#e47975"],ground:"#414152",sign:"ARCADE"}
       ];
       const currentLevel=()=>LEVELS[campaignMode?Math.max(0,wave-1):2];
       let finisher = null, comboInput = [], fallen = [], victoryDelay = 0;
@@ -297,7 +297,8 @@
           if(event.kind==="summon"){const ally=MassHeroCameos.ROSTER.find(r=>r.id===event.id);pop(event.x,event.y-170,ally.name.toUpperCase()+" · 10 SECOND ASSIST",ally.color,true);beep(430,.18,"triangle",.04);}
           if(event.kind==="sniper"){burst(event.x,event.y-55,15,"#ccff96",.8);beep(760,.12,"square",.025);}
           if(event.kind==="impact"){ring(event.x,event.y-30,"#ffc187",110);if(cinematic)shake=Math.max(shake,8);beep(85,.12,"sawtooth",.04);}
-          if(event.kind==="shock"){ring(event.x,event.y-35,"#94eeff",340);burst(event.x,event.y-65,18,"#9aefff",1.2);beep(230,.16,"triangle",.035);}
+          if(event.kind==="melee"){burst(event.x,event.y,5,"#ffd4a2",.35);if(cinematic)shake=Math.max(shake,event.kick?3:1.5);beep(event.kick?95:130,.045,"triangle",.018);}
+          if(event.kind==="rifle"){burst(event.x,event.y,2,"#ffe6a3",.2);beep(155,.035,"sawtooth",.012);}
           if(event.kind==="expired"&&player)pop(player.x,player.y-150,"SUPPORT EXTRACTED","#c8ddf2");
         }
       });
@@ -430,23 +431,27 @@
       function ring(x,y,color,size=190){rings.push({x,y,r:10,max:size,life:.45,color});}
       function enemy(type,x,y){
         const profile=currentLevel(),bossId=campaignMode?wave-1:2;
-        const hp=type==="boss"?profile.hp:type==="heavy"?100:64;
-        return{id:++uid,type,bossId,x,y,hp,maxHp:hp,face:-1,speed:type==="boss"?profile.speed:type==="heavy"?82:rand(95,128),range:type==="boss"?84:type==="heavy"?60:51,cooldown:rand(.35,1.2),windup:0,stun:0,flash:0,attackAnim:0,attackIndex:0,attackKind:"punch",moving:false,guardTime:0,rushTime:0,rushHit:false,rushFace:1,enraged:false,walk:rand(0,TAU),dead:false};
+        const hp=type==="boss"?profile.hp:type==="heavy"?135+wave*15:80+wave*10;
+        return{id:++uid,type,bossId,x,y,hp,maxHp:hp,face:-1,speed:type==="boss"?profile.speed:type==="heavy"?100+wave*5:rand(115,140)+wave*6,range:type==="boss"?84:type==="heavy"?60:51,cooldown:rand(.35,1.2),windup:0,stun:0,flash:0,attackAnim:0,attackIndex:0,attackKind:"punch",moving:false,guardTime:0,rushTime:0,rushHit:false,rushFace:1,enraged:false,walk:rand(0,TAU),dead:false};
       }
       function spawnWave() {
         wave++;if(wave===3)victorySequence.load();phase="wave";cameo.resetWave(wave);nextWave=0;victoryDelay=0;entranceTimer=0;
-        const roster=wave===1?["grunt","grunt","grunt"]:wave===2?["grunt","grunt","heavy","grunt","grunt"]:["heavy","grunt","grunt","heavy","grunt","grunt"];
-        enemies=roster.map((type,i)=>{
-          const side=i%2===0?1:-1;
-          const actor=enemy(type,side>0?W+30+(i%3)*20:-30-(i%3)*20,347+(i*37)%150);
-          actor.entering=true;actor.cooldown=.7;return actor;
-        });
+        waveTotal=[12,18,24][wave-1];
+        reinforcementQueue=Array.from({length:waveTotal},(_,i)=>i%(wave===1?5:4)===3?"heavy":"grunt");
+        reinforcementTimer=1.5;enemies=[];
+        for(let i=0;i<4;i++)spawnReinforcement();
         bannerText="WAVE "+wave+" · "+currentLevel().arena;bannerTimer=2.2;
         beep(180,.22,"sawtooth",.04);hud();
       }
+      function spawnReinforcement(){
+        if(!reinforcementQueue.length)return;
+        const index=waveTotal-reinforcementQueue.length,type=reinforcementQueue.shift(),side=index%2===0?1:-1;
+        const actor=enemy(type,side>0?W+35:-35,347+(index*37)%150);
+        actor.entering=true;actor.cooldown=.9;enemies.push(actor);
+      }
       function spawnBoss(){
         if(wave===3)victorySequence.load();
-        phase="boss";cameo.stop();victoryDelay=0;
+        phase="boss";reinforcementQueue=[];cameo.stop();victoryDelay=0;
         const entryX=player.x<W/2?760:200;
         const actor=enemy("boss",entryX,clamp(player.y,350,480));
         entranceTimer=cinematic?1.25:.55;actor.introTime=entranceTimer;actor.cooldown=entranceTimer+.35;
@@ -478,7 +483,7 @@
         campaignMode=campaign===true;
         keys.clear();finisher=null;comboInput=[];fallen=[];victoryDelay=0;transition=null;entranceTimer=0;phase="wave";hitPause=0;slowMotion=0;impactTime=0;cameraZoom=1;
         player={x:280,y:421,hp:100,rage:0,face:1,cooldown:0,punchTime:0,dashTime:0,dashCooldown:0,dashX:1,dashY:0,invuln:0,specialTime:0,celebrateTime:0,moving:false,blocking:false,dashHits:[],walk:0};
-        enemies=[];particles=[];rings=[];floaters=[];
+        enemies=[];reinforcementQueue=[];reinforcementTimer=0;particles=[];rings=[];floaters=[];
         score=resumeScore;wave=campaignMode?resumeWave:2;combo=0;comboTimer=0;nextWave=0;shake=0;flash=0;clock=0;mode="playing";
         $("overlay").classList.add("hidden");$("campaign").hidden=true;$("pause").textContent="Ⅱ Pause";
         if(campaignMode){if(retry&&resumePhase==="boss"){wave++;spawnBoss();}else spawnWave();}else{wave=3;spawnBoss();}
@@ -544,6 +549,7 @@
         if(e.hp<=0){
           e.dead=true;
           if(e.type==="boss"){fallen.push({...e,fallTime:.85});victoryDelay=.85;if(cinematic)slowMotion=.7;}
+          else if(phase==="wave"&&!reinforcementQueue.length&&enemies.every(other=>other.dead)){fallen.push({...e,fallTime:.65});victoryDelay=.65;if(cinematic){slowMotion=.45;impactTime=.35;}}
           score+=e.type==="boss"?2000:e.type==="heavy"?300:160;
           player.rage=clamp(player.rage+8,0,100);
           burst(e.x,e.y-48,24,e.type==="boss"?"#ff5591":"#a3e4ff",1.6);
@@ -598,7 +604,7 @@
           ring(player.x,player.y-65,"#8cf2ff",65);pop(player.x,player.y-155,"BLOCK!","#a4edff");beep(360,.08,"triangle");hud();return;
         }
         if(keys.has("i"))pop(player.x,player.y-155,"GUARD BROKEN!","#ff8d98",true);
-        const dmg=e.type==="boss"?LEVELS[e.bossId].damage:e.type==="heavy"?13:9;
+        const dmg=e.type==="boss"?LEVELS[e.bossId].damage:e.type==="heavy"?16+wave*2:11+wave*2;
         player.hp=Math.max(0,player.hp-dmg);player.invuln=.85;
         player.x=clamp(player.x+e.face*27,30,930);shake=12;flash=.11;combo=0;comboTimer=0;
         burst(player.x,player.y-54,16,"#ff6a7e");
@@ -615,7 +621,7 @@
         $("energy-bar").style.width=player.rage+"%";
         $("energy-text").textContent=Math.floor(player.rage)+"%"+(player.rage>=100?" FATALITY READY!":"");
         $("score").textContent=String(score).padStart(6,"0");
-        $("wave-label").textContent=campaignMode?"LEVEL "+wave+" / 3 · "+(phase==="wave"?"STREET WAVE":"BOSS FIGHT"):"BODHI SHOWDOWN";
+        $("wave-label").textContent=campaignMode?"LEVEL "+wave+" / 3 · "+(phase==="wave"?"STREET WAVE · "+(enemies.filter(e=>!e.dead).length+reinforcementQueue.length)+" HOSTILES":"BOSS FIGHT"):"BODHI SHOWDOWN";
         const boss=enemies.find(e=>e.type==="boss"&&!e.dead);
         $("boss-hud").style.display=boss?"block":"none";
         if(boss){$("boss-bar").style.width=Math.max(0,boss.hp/boss.maxHp*100)+"%";document.querySelector("#boss-hud strong").textContent=LEVELS[boss.bossId].name;document.querySelector("#boss-hud span").textContent=campaignMode?"LEVEL "+wave+" BOSS":"FINAL BOSS";}
@@ -696,6 +702,13 @@
           }
           hud();return;
         }
+        if(phase==="wave"&&reinforcementQueue.length){
+          reinforcementTimer-=dt;
+          if(reinforcementTimer<=0&&enemies.filter(e=>!e.dead).length<5+wave){
+            spawnReinforcement();reinforcementTimer=1.15-wave*.12;
+            if(reinforcementQueue.length%6===0){bannerText="REINFORCEMENTS INCOMING · "+reinforcementQueue.length+" MORE";bannerTimer=1.3;}
+          }
+        }
         for(const e of enemies){
           if(e.dead)continue;
           if(p.dashTime>0&&!p.dashHits.includes(e.id)&&Math.abs(e.x-p.x)<70&&Math.abs(e.y-p.y)<48){p.dashHits.push(e.id);hit(e,24,12);}
@@ -731,7 +744,7 @@
             const m=Math.hypot(dx,dy)||1,speed=e.speed*(dist<120?.72:1)*(e.type==="boss"&&e.hp<e.maxHp*.5?1.3:1);
             e.moving=true;
             e.x+=dx/m*speed*dt;e.y+=dy/m*speed*.75*dt;e.walk+=dt*10;
-          }else if(e.cooldown<=0){
+          }else if(e.cooldown<=0&&(e.type==="boss"||enemies.filter(other=>!other.dead&&other.windup>0).length<2)){
             e.attackIndex++;e.attackKind=e.type==="boss"&&e.bossId>0&&e.attackIndex%3===0?"rush":e.attackIndex%2===0?"heavy":"punch";
             e.windup=e.type==="boss"?(e.attackKind==="rush"?.85:e.attackKind==="heavy"?.68:.46):.36;
             if(e.type==="boss")pop(e.x,e.y-170,e.attackKind==="rush"?"RUSH · DASH AWAY!":e.attackKind==="heavy"?"HEAVY PUNCH!":"PUNCH · GUARD!","#ff9ba8");
@@ -740,7 +753,7 @@
           if(e.x>=30&&e.x<=930)e.entering=false;
         }
         enemies=enemies.filter(e=>!e.dead);
-        if(enemies.length===0&&nextWave===0){
+        if(enemies.length===0&&reinforcementQueue.length===0&&nextWave===0){
           if(cameo.active){bannerText="WAVE SECURED · SUPPORT ON STATION";bannerTimer=.3;hud();return;}
           if(victoryDelay>0)return;
           if(phase==="wave")beginTransition("boss");

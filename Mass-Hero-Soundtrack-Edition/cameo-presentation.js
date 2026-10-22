@@ -28,11 +28,23 @@
           else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
         }
       });
-      this.image.onload=()=>{try{this.decode();this.ready=true;this.error=false;this.paintCards();this.updateConfirm();}catch(error){this.fail();}};
-      this.image.onerror=()=>this.fail();this.load();
+      this.image.onload=()=>{try{this.decode();this.baseReady=true;this.ready=!!this.actionReady&&!this.error;this.paintCards();this.updateConfirm();}catch(error){this.fail();}};
+      this.image.onerror=()=>this.fail();
+      this.actionFrames=[];const actionArt=this.actionImage=new Image();
+      actionArt.onload=()=>{
+        this.actionFrames=[];
+        for(let i=0;i<16;i++){
+          const w=actionArt.width/4,h=actionArt.height/4,canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
+          const context=canvas.getContext("2d");context.drawImage(actionArt,(i%4)*w,Math.floor(i/4)*h,w,h,0,0,w,h);
+          const data=context.getImageData(0,0,w,h).data;let left=w,top=h,right=0,bottom=0;
+          for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>80){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y);}
+          this.actionFrames.push({canvas,x:left,y:top,w:right-left+1,h:bottom-top+1});
+        }
+        this.actionReady=true;this.ready=!!this.baseReady&&!this.error;this.updateConfirm();
+      };actionArt.onerror=()=>this.fail();this.load();
     }
     fail(){this.error=true;this.ready=false;this.updateConfirm();}
-    load(){this.error=false;this.ready=false;this.updateConfirm();this.image.src="assets/cameo-roster.png?retry="+Date.now();}
+    load(){this.error=false;this.ready=false;this.baseReady=false;this.actionReady=false;this.updateConfirm();const version=Date.now();this.image.src="assets/cameo-roster.png?retry="+version;this.actionImage.src="assets/cameo-combat-actions.png?retry="+version;}
     decode(){
       // The reference-based atlas has extended rifles, command arms and a wide SUV.
       const regions=[[0,65,274,566],[270,65,241,566],[512,65,256,566],[770,65,254,566],[0,634,304,435],[275,675,235,394],[505,630,338,440],[733,704,291,366],[0,1080,266,420],[239,1080,245,420],[450,1080,286,420],[609,1200,415,270]];
@@ -67,6 +79,22 @@
     close(){ $("cameo-picker").hidden=true;if(this.lastFocus&&this.lastFocus.isConnected)this.lastFocus.focus({preventScroll:true}); }
     paintCards(){this.cards.forEach((card,i)=>{const canvas=card.querySelector("canvas"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,220,270);this.sprite(ctx,i,110,263,245,1);});}
     sprite(ctx,index,x,y,height,face=1){const frame=this.frames[index];if(!frame)return;const width=frame.w/frame.h*height;ctx.save();ctx.translate(x,y);ctx.scale(face,1);ctx.drawImage(frame.canvas,frame.x,frame.y,frame.w,frame.h,-width/2,-height,width,height);ctx.restore();}
+    actionSprite(ctx,index,x,y,height,face){
+      const frame=this.actionFrames[index];if(!frame)return false;
+      const width=frame.w/frame.h*height;ctx.save();ctx.translate(x,y);ctx.scale(face,1);
+      ctx.drawImage(frame.canvas,frame.x,frame.y,frame.w,frame.h,-width/2,-height,width,height);ctx.restore();return true;
+    }
+    martialSprite(ctx,actor,index){
+      const attacking=actor.attacking>0,progress=attacking?( .4-actor.attacking)/.4:0;
+      const extension=Math.sin(progress*Math.PI),bob=actor.moving?Math.abs(Math.sin(actor.walk))*3:0;
+      let frame;
+      if(index<0)frame=attacking?[3,4,5,7][actor.combo]:actor.moving?1+Math.floor(actor.walk/Math.PI)%2:0;
+      else frame=10+index*2+(attacking?1:0);
+      ctx.save();ctx.translate(actor.x+actor.face*extension*7,actor.y-bob);ctx.rotate(actor.face*extension*(actor.combo===2?-.07:.045));
+      ctx.fillStyle="#080c1870";ctx.beginPath();ctx.ellipse(0,2,25,6,0,0,Math.PI*2);ctx.fill();
+      if(!this.actionSprite(ctx,frame,0,0,index<0?132:124,actor.face))this.sprite(ctx,index<0?3:8+index,0,0,124,actor.face);
+      ctx.restore();
+    }
     updateHUD(c){
       const r=ROSTER.find(r=>r.id===this.support.selected),a=this.support.active;
       $("cameo-name").textContent=r?r.name+" · "+r.ability:"CAMEO SUPPORT";
@@ -103,21 +131,21 @@
         ctx.drawImage(driver.canvas,driver.x+driver.w*.2,driver.y,driver.w*.65,driver.h*.42,15,-height*.81,51,height*.29);ctx.restore();
         ctx.strokeStyle="#ffbb7a88";ctx.lineWidth=3;for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(-150-i*12,-25-i*12);ctx.lineTo(-190-i*12,-25-i*12);ctx.stroke();}ctx.restore();
       }else if(a.id==="hrithik"){
-        this.sprite(ctx,6,c.player.x-c.player.face*68,c.player.y-8,112,c.player.face);
-        a.agents.forEach((agent,i)=>{ctx.save();ctx.translate(agent.x,agent.y+Math.sin(a.elapsed*19+i)*2);ctx.rotate(agent.attacking>0?agent.face*.035:Math.sin(a.elapsed*15+i)*.018);this.sprite(ctx,8+i,0,0,111,agent.face);ctx.restore();});
+        const g=a.gunner;
+        if(!this.actionSprite(ctx,g.recoil>0?9:8,g.x-g.face*g.recoil*24,g.y,138,g.face))this.sprite(ctx,2,g.x,g.y,138,g.face);
+        a.agents.slice().sort((x,y)=>x.y-y.y).forEach(agent=>this.martialSprite(ctx,agent,a.agents.indexOf(agent)));
+        if(g.recoil>0){ctx.fillStyle="#ffe1a1";ctx.beginPath();ctx.ellipse(g.x+g.face*54,g.y-85,8,3,0,0,Math.PI*2);ctx.fill();}
       }else if(a.id==="pragi"){
-        const striking=a.effects.some(e=>e.kind==="shock"&&e.age<.35),x=c.player.x+c.player.face*68;
-        this.sprite(ctx,striking?7:3,x,c.player.y-Math.abs(Math.sin(a.elapsed*5))*10,124,c.player.face);
+        this.martialSprite(ctx,a.fighter,-1);
       }
       for(const effect of a.effects){
         const fade=Math.max(0,1-effect.age/effect.duration);ctx.globalAlpha=fade;ctx.lineWidth=effect.kind==="sniper"?4:3;
         ctx.strokeStyle=effect.kind==="sniper"?"#d6ff9b":effect.kind==="slash"?"#e0b5ff":"#9aedff";
         ctx.beginPath();
-        if(effect.kind==="shock"){const radius=30+effect.age/effect.duration*330;ctx.ellipse(effect.x,effect.y,radius,radius*.4,0,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.ellipse(effect.x,effect.y,radius*.6,radius*.24,0,0,Math.PI*2);}
-        else if(effect.kind==="slash"){ctx.arc(effect.x,effect.y,24+effect.age*60,-1.7,1.4);}
-        else if(effect.kind==="lightning"){
-          ctx.moveTo(effect.fromX,effect.fromY);for(let i=1;i<=6;i++){const t=i/6;ctx.lineTo(effect.fromX+(effect.x-effect.fromX)*t+(i<6?(i%2?14:-14):0),effect.fromY+(effect.y-effect.fromY)*t);}
-        }else{ctx.moveTo(effect.fromX,effect.fromY||effect.y-18);ctx.lineTo(effect.x,effect.y);}
+        if(effect.kind==="contact"){
+          for(let i=0;i<5;i++){const angle=i*Math.PI*2/5;ctx.moveTo(effect.x+Math.cos(angle)*4,effect.y+Math.sin(angle)*4);ctx.lineTo(effect.x+Math.cos(angle)*14,effect.y+Math.sin(angle)*14);}
+          ctx.strokeStyle="#ffdaa1";
+        }else{ctx.strokeStyle=effect.kind==="rifle"?"#ffe2a0":"#d6ff9b";ctx.moveTo(effect.fromX,effect.fromY||effect.y-18);ctx.lineTo(effect.x,effect.y);}
         ctx.stroke();
       }
       ctx.restore();
