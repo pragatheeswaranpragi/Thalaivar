@@ -142,7 +142,7 @@
 <body>
   <div class="app" id="app">
     <header class="header">
-      <div class="brand"><div class="brand-mark">M<span>H</span></div><div><h1>MASS HERO</h1><p>NEON RECKONING · THREE BOSS CAMPAIGN</p></div></div>
+      <div class="brand"><div class="brand-mark">M<span>H</span></div><div><h1>MASS HERO</h1><p>NEON RECKONING · CONTINUOUS CAMPAIGN</p></div></div>
       <div class="header-right"><span class="status">SINGLE PLAYER</span><button id="fullscreen" aria-label="Toggle fullscreen">⛶ Fullscreen</button></div>
     </header>
     <main class="play-area">
@@ -163,8 +163,8 @@
         <div class="overlay" id="overlay">
           <span class="eyebrow" id="eyebrow">A ONE-HERO ARCADE EXPERIENCE</span>
           <h2 id="overlay-title">THE CITY<br><em>NEEDS A HERO.</em></h2>
-          <p id="overlay-message">Three levels. Three bosses. Run the dockyard, break Kalpak Brother, then face Bodhi Kalpak.</p>
-          <div class="chips"><span>3 BOSS LEVELS</span><span>RUN + PUNCH</span><span>ROCKET FATALITY</span></div>
+          <p id="overlay-message">Wave one. The Enforcer. Wave two. Kalpak Brother. Final wave. Bodhi Kalpak. One continuous fight.</p>
+          <div class="chips"><span>3 WAVES + 3 BOSSES</span><span>SEAMLESS COMBAT</span><span>ROCKET FATALITY</span></div>
           <button id="main-button" disabled>LOADING FIGHT ANIMATIONS…</button><button id="campaign" style="background:transparent;color:#ffe3aa;border:1px solid #9b8ba175;padding:7px 15px;border-radius:4px;font-size:11px">Quick duel: Bodhi Kalpak</button><span class="hint">MOVE · FIGHT · CHARGE · CONQUER</span>
         </div>
       </section>
@@ -189,7 +189,7 @@
         <button id="cinema" aria-pressed="true">Cinema On</button><button id="sound">♪ Effects On</button><button id="pause">Ⅱ Pause</button><button id="restart">↻ Restart</button>
       </div>
     </div>
-    <footer class="footer"><span>★ THREE BOSS CAMPAIGN · DOCKYARD → MILL → NEON CITY</span><span>MADE FOR PRAGI · 2026</span></footer>
+    <footer class="footer"><span>★ CONTINUOUS CAMPAIGN · WAVE → BOSS → NEXT WAVE</span><span>MADE FOR PRAGI · 2026</span></footer>
   </div>
   <audio id="soundtrack" preload="metadata" playsinline aria-label="Game background music"></audio>
   <script>
@@ -209,7 +209,8 @@
       const soundtrack = $("soundtrack");
       const musicFiles = {fight:"assets/jailer2-theme.mp3",lost:"assets/netru-ponavai.mp3"};
       let uid = 0;
-      let campaignMode=true, spriteStatus="loading", checkpointScore=0;
+      let campaignMode=true, spriteStatus="loading", checkpointScore=0, checkpointPhase="wave";
+      let phase="wave", transition=null, entranceTimer=0;
       const LEVELS=[
         {name:"THE ENFORCER",arena:"DOCKYARD AMBUSH",hp:210,speed:165,damage:13,cooldown:1.5,sky:["#0d2631","#29575b","#8eae98"],ground:"#29464a",sign:"DOCKS"},
         {name:"KALPAK BROTHER",arena:"MILL LOCKDOWN",hp:280,speed:185,damage:16,cooldown:1.3,sky:["#241624","#61394a","#d49465"],ground:"#47363d",sign:"MILL"},
@@ -335,38 +336,51 @@
         return{id:++uid,type,bossId,x,y,hp,maxHp:hp,face:-1,speed:type==="boss"?profile.speed:type==="heavy"?82:rand(95,128),range:type==="boss"?84:type==="heavy"?60:51,cooldown:rand(.35,1.2),windup:0,stun:0,flash:0,attackAnim:0,attackIndex:0,attackKind:"punch",moving:false,guardTime:0,rushTime:0,rushHit:false,rushFace:1,enraged:false,walk:rand(0,TAU),dead:false};
       }
       function spawnWave() {
-        wave++;
-        const level=currentLevel();
-        enemies=[enemy("boss",665,421)];
-        bannerText=(campaignMode?"LEVEL "+wave+" · ":"SHOWDOWN · ")+level.name;
-        bannerTimer=2.1;nextWave=0;victoryDelay=0;
-        burst(665,360,30,wave===1?"#7ae9ca":wave===2?"#ffc486":"#f6659d",1.4);
-        shake=9;beep(95,.3,"sawtooth",.05);hud();
+        wave++;phase="wave";nextWave=0;victoryDelay=0;entranceTimer=0;
+        const roster=wave===1?["grunt","grunt","grunt"]:wave===2?["grunt","grunt","heavy","grunt","grunt"]:["heavy","grunt","grunt","heavy","grunt","grunt"];
+        enemies=roster.map((type,i)=>{
+          const side=i%2===0?1:-1;
+          const actor=enemy(type,side>0?W+30+(i%3)*20:-30-(i%3)*20,347+(i*37)%150);
+          actor.entering=true;actor.cooldown=.7;return actor;
+        });
+        bannerText="WAVE "+wave+" · "+currentLevel().arena;bannerTimer=2.2;
+        beep(180,.22,"sawtooth",.04);hud();
       }
-      function advanceLevel(){
-        keys.clear();fallen=[];mode="playing";
-        player.x=280;player.y=421;player.hp=Math.min(100,player.hp+30);
-        player.invuln=1;player.cooldown=0;player.punchTime=0;player.dashTime=0;player.dashCooldown=0;player.moving=false;player.blocking=false;
-        combo=0;comboTimer=0;finisher=null;comboInput=[];hitPause=0;slowMotion=0;impactTime=0;cameraZoom=1;
-        $("overlay").classList.add("hidden");$("pause").textContent="Ⅱ Pause";
-        spawnWave();cueMusic("fight");$("stage").focus({preventScroll:true});
+      function spawnBoss(){
+        phase="boss";victoryDelay=0;
+        const entryX=player.x<W/2?760:200;
+        const actor=enemy("boss",entryX,clamp(player.y,350,480));
+        entranceTimer=cinematic?1.25:.55;actor.introTime=entranceTimer;actor.cooldown=entranceTimer+.35;
+        enemies=[actor];bannerText=(campaignMode?"LEVEL "+wave+" BOSS · ":"SHOWDOWN · ")+currentLevel().name;bannerTimer=2.3;
+        burst(actor.x,actor.y-55,32,wave===1?"#7ae9ca":wave===2?"#ffc486":"#f6659d",1.4);
+        ring(actor.x,actor.y-10,"#ffbc86",140);shake=cinematic?12:0;beep(85,.35,"sawtooth",.065);hud();
       }
-      function completeLevel(){
-        score+=600*wave;checkpointScore=score;mode="levelclear";keys.clear();cueMusic(null);
-        showOverlay("LEVEL "+wave+" <em>CLEARED.</em>",currentLevel().name+" defeated. Next: "+LEVELS[wave].name+" · +30 health on entry.","▶ NEXT LEVEL · "+LEVELS[wave].name,"BOSS DEFEATED · "+currentLevel().arena);
-        beep(650,.25);hud();
+      function beginTransition(kind){
+        transition={kind,time:0,duration:cinematic?2.1:1.1};
+        bannerTimer=0;$("wave-banner").style.opacity="0";
+        player.celebrateTime=1.4;beep(kind==="boss"?210:650,.25,"triangle",.045);
+        if(kind==="boss"){
+          score+=250*wave;checkpointScore=score;checkpointPhase="boss";
+        }else{
+          score+=600*wave;checkpointScore=score;checkpointPhase="wave";
+          const healed=Math.min(30,100-player.hp);player.hp+=healed;
+          if(healed>0)pop(player.x,player.y-155,"+"+healed+" HEALTH","#9bf1c1",true);
+        }
+        hud();
       }
       function start(campaign=campaignMode,retry=false) {
         if(spriteStatus!=="ready"){if(spriteStatus==="error")loadBossSprites();return;}
         const resumeWave=retry&&campaignMode?Math.max(0,wave-1):0;
         const resumeScore=retry?checkpointScore:0;
-        if(!retry)checkpointScore=0;
+        const resumePhase=retry?checkpointPhase:"wave";
+        if(!retry){checkpointScore=0;checkpointPhase="wave";}
         campaignMode=campaign===true;
-        keys.clear();finisher=null;comboInput=[];fallen=[];victoryDelay=0;hitPause=0;slowMotion=0;impactTime=0;cameraZoom=1;
+        keys.clear();finisher=null;comboInput=[];fallen=[];victoryDelay=0;transition=null;entranceTimer=0;phase="wave";hitPause=0;slowMotion=0;impactTime=0;cameraZoom=1;
         player={x:280,y:421,hp:100,rage:0,face:1,cooldown:0,punchTime:0,dashTime:0,dashCooldown:0,dashX:1,dashY:0,invuln:0,specialTime:0,celebrateTime:0,moving:false,blocking:false,dashHits:[],walk:0};
         enemies=[];particles=[];rings=[];floaters=[];
         score=resumeScore;wave=campaignMode?resumeWave:2;combo=0;comboTimer=0;nextWave=0;shake=0;flash=0;clock=0;mode="playing";
-        $("overlay").classList.add("hidden");$("campaign").hidden=true;$("pause").textContent="Ⅱ Pause";spawnWave();
+        $("overlay").classList.add("hidden");$("campaign").hidden=true;$("pause").textContent="Ⅱ Pause";
+        if(campaignMode){if(retry&&resumePhase==="boss"){wave++;spawnBoss();}else spawnWave();}else{wave=3;spawnBoss();}
         $("stage").focus({preventScroll:true});
         cueMusic("fight");
         beep(470,.14);
@@ -388,7 +402,7 @@
           beep(650,.3);
         } else {
           cueMusic("lost",153);
-          showOverlay("HERO <em>DOWN.</em>",currentLevel().name+" won this round. Retry this level with full health.",(campaignMode?"↻ RETRY LEVEL "+wave:"↻ TRY AGAIN"),"MISSION FAILED · NOT THE END");
+          showOverlay("HERO <em>DOWN.</em>",(phase==="wave"?"The street crew stopped you. Retry this wave with full health.":currentLevel().name+" won this round. Retry this boss with full health."),(campaignMode?"↻ RETRY "+(phase==="wave"?"WAVE ":"BOSS ")+wave:"↻ TRY AGAIN"),"MISSION FAILED · NOT THE END");
           beep(140,.38,"sawtooth");
         }
         hud();
@@ -496,7 +510,7 @@
         $("energy-bar").style.width=player.rage+"%";
         $("energy-text").textContent=Math.floor(player.rage)+"%"+(player.rage>=100?" FATALITY READY!":"");
         $("score").textContent=String(score).padStart(6,"0");
-        $("wave-label").textContent=campaignMode?"LEVEL "+wave+" / 3 · "+currentLevel().arena:"BODHI SHOWDOWN";
+        $("wave-label").textContent=campaignMode?"LEVEL "+wave+" / 3 · "+(phase==="wave"?"STREET WAVE":"BOSS FIGHT"):"BODHI SHOWDOWN";
         const boss=enemies.find(e=>e.type==="boss"&&!e.dead);
         $("boss-hud").style.display=boss?"block":"none";
         if(boss){$("boss-bar").style.width=Math.max(0,boss.hp/boss.maxHp*100)+"%";document.querySelector("#boss-hud strong").textContent=LEVELS[boss.bossId].name;document.querySelector("#boss-hud span").textContent=campaignMode?"LEVEL "+wave+" BOSS":"FINAL BOSS";}
@@ -515,6 +529,7 @@
           for(const body of fallen)body.fallTime-=dt;
           fallen=fallen.filter(body=>body.fallTime>0);
           victoryDelay=Math.max(0,victoryDelay-dt);
+          entranceTimer=Math.max(0,entranceTimer-dt);
         }
         clock+=dt;
         for(const r of rain){r.y+=r.speed*dt;r.x-=r.speed*.22*dt;if(r.y>H){r.y=-20;r.x=rand(0,W);}if(r.x<0)r.x=W;}
@@ -565,6 +580,15 @@
           if(v.x||v.y)p.walk+=dt*12;
         }
         p.x=clamp(p.x,30,930);p.y=clamp(p.y,327,510);
+        if(transition){
+          transition.time+=dt;
+          if(transition.time>=transition.duration){
+            const kind=transition.kind;transition=null;fallen=[];
+            p.celebrateTime=0;p.invuln=Math.max(p.invuln,.6);
+            if(kind==="boss")spawnBoss();else spawnWave();
+          }
+          hud();return;
+        }
         for(const e of enemies){
           if(e.dead)continue;
           if(p.dashTime>0&&!p.dashHits.includes(e.id)&&Math.abs(e.x-p.x)<70&&Math.abs(e.y-p.y)<48){p.dashHits.push(e.id);hit(e,24,12);}
@@ -572,8 +596,10 @@
           e.flash=Math.max(0,e.flash-dt);e.cooldown=Math.max(0,e.cooldown-dt);
           e.attackAnim=Math.max(0,e.attackAnim-dt);e.guardTime=Math.max(0,e.guardTime-dt);e.stun=Math.max(0,e.stun-dt);
           e.moving=false;
+          e.introTime=Math.max(0,(e.introTime||0)-dt);
           e.face=p.x>=e.x?1:-1;
           if(e.stun>0){e.rushTime=0;continue;}
+          if(e.introTime>0)continue;
           if(e.type==="boss"&&e.bossId===2&&e.hp<e.maxHp*.5&&!e.enraged){e.enraged=true;pop(e.x,e.y-165,LEVELS[e.bossId].name+" UNLEASHED!","#ff687f",true);ring(e.x,e.y-60,"#ff537e",160);}
           if(e.rushTime>0){
             e.rushTime=Math.max(0,e.rushTime-dt);e.attackAnim=e.rushTime;e.face=e.rushFace;e.moving=true;e.walk+=dt*18;
@@ -586,7 +612,7 @@
             e.windup-=dt;
             if(e.windup<=0){
               e.attackAnim=e.type==="boss"?.34:.2;
-              if(e.bossId===1)e.guardTime=.55;
+              if(e.type==="boss"&&e.bossId===1)e.guardTime=.55;
               if(e.attackKind==="rush"){e.rushTime=.38;e.rushFace=e.face;e.rushHit=false;}
               else if(Math.abs(dx)<e.range+20&&Math.abs(dy)<48)hurt(e);
               if(e.type==="boss"){ring(e.x,e.y-40,"#ff5b92",115);burst(e.x+e.face*45,e.y-45,14,"#fd6b9e",.7);}
@@ -603,15 +629,17 @@
             e.windup=e.type==="boss"?(e.attackKind==="rush"?.85:e.attackKind==="heavy"?.68:.46):.36;
             if(e.type==="boss")pop(e.x,e.y-170,e.attackKind==="rush"?"RUSH · DASH AWAY!":e.attackKind==="heavy"?"HEAVY PUNCH!":"PUNCH · GUARD!","#ff9ba8");
           }
-          e.x=clamp(e.x,30,930);e.y=clamp(e.y,326,510);
+          e.x=clamp(e.x,e.entering?-90:30,e.entering?W+90:930);e.y=clamp(e.y,326,510);
+          if(e.x>=30&&e.x<=930)e.entering=false;
         }
         enemies=enemies.filter(e=>!e.dead);
         if(enemies.length===0&&nextWave===0){
           if(victoryDelay>0)return;
-          if(wave===3||!campaignMode){end(true);return;}
-          completeLevel();return;
+          if(phase==="wave")beginTransition("boss");
+          else if(wave===3||!campaignMode){end(true);return;}
+          else beginTransition("level");
+          return;
         }
-        if(nextWave>0){nextWave-=dt;if(nextWave<=0)spawnWave();}
         hud();
       }
       function rect(x,y,w,h,r,fill){
@@ -669,7 +697,7 @@
         ctx.fillStyle=vign;ctx.fillRect(0,0,W,H);
       }
       function villainPose(a){
-        return a.dead?(a.bossId===2?5:7):a.stun>0?5:a.attackAnim>0?4:a.guardTime>0?3:a.windup>0?(a.attackKind==="rush"?6:3):a.moving?1+Math.floor(a.walk*1.4)%2:Math.floor(clock*1.5)%2?3:0;
+        return a.dead?(a.bossId===2?5:7):a.stun>0?5:a.attackAnim>0?4:a.guardTime>0||a.introTime>0?3:a.windup>0?(a.attackKind==="rush"?6:3):a.moving?1+Math.floor(a.walk*1.4)%2:Math.floor(clock*1.5)%2?3:0;
       }
       function drawActor(a,hero=false){
         const boss=a.type==="boss",heavy=a.type==="heavy";
@@ -814,11 +842,34 @@
         }
         ctx.globalAlpha=1;ctx.textAlign="left";
       }
+      function drawActionTrails(){
+        if(!cinematic)return;
+        ctx.save();ctx.lineWidth=2;
+        for(const actor of [player,...enemies]){
+          if(!actor||(!(actor.dashTime>0)&&!(actor.rushTime>0)))continue;
+          ctx.strokeStyle=actor===player?"#9deeff88":"#ff7c9188";
+          for(let i=0;i<5;i++){const y=actor.y-25-i*19;ctx.beginPath();ctx.moveTo(actor.x-actor.face*25,y);ctx.lineTo(actor.x-actor.face*(70+i*9),y);ctx.stroke();}
+        }
+        ctx.restore();
+      }
+      function drawTransition(){
+        if(!transition)return;
+        const t=transition,fade=Math.min(1,t.time*4,(t.duration-t.time)*4);
+        ctx.save();ctx.globalAlpha=Math.max(0,fade);
+        const shade=ctx.createLinearGradient(0,100,0,400);shade.addColorStop(0,"#080c21aa");shade.addColorStop(1,"#080c2100");
+        ctx.fillStyle=shade;ctx.fillRect(0,100,W,300);ctx.textAlign="center";
+        ctx.font="italic 1000 38px system-ui";ctx.fillStyle="#ffda8f";ctx.shadowColor="#070918";ctx.shadowBlur=12;
+        ctx.fillText(t.kind==="boss"?"WAVE "+wave+" CLEARED":"LEVEL "+wave+" CONQUERED",W/2,190);
+        ctx.font="800 19px system-ui";ctx.fillStyle="#fff5e1";
+        ctx.fillText(t.kind==="boss"?currentLevel().name+" IS COMING":LEVELS[wave].arena+" · NEXT WAVE INCOMING",W/2,225);
+        ctx.font="700 12px system-ui";ctx.fillStyle="#a8cfde";ctx.fillText("KEEP MOVING · THE FIGHT CONTINUES",W/2,252);ctx.restore();
+      }
       function draw(){
         ctx.save();
-        const targetZoom=cinematic&&mode==="playing"?(finisher?1.16:impactTime>0?1.045:1):1;
+        const targetZoom=cinematic&&mode==="playing"?(finisher?1.16:entranceTimer>0?1.10:transition?1.035:impactTime>0?1.045:1):1;
         cameraZoom+=(targetZoom-cameraZoom)*.12;
-        const focus=finisher?(player.x+finisher.target.x)/2:player?player.x:W/2;
+        const enteringBoss=entranceTimer>0?enemies.find(e=>e.type==="boss"):null;
+        const focus=finisher?(player.x+finisher.target.x)/2:enteringBoss?(player.x+enteringBoss.x)/2:player?player.x:W/2;
         const cx=clamp(focus,W/(2*cameraZoom),W-W/(2*cameraZoom));
         ctx.translate(W/2,H/2);ctx.scale(cameraZoom,cameraZoom);ctx.translate(-cx,-H/2);
         if(cinematic&&shake>0)ctx.translate(rand(-shake,shake),rand(-shake*.5,shake*.5));
@@ -834,8 +885,9 @@
             ctx.fillStyle=glow;ctx.fillRect(player.x-120,player.y-170,240,240);ctx.globalAlpha=1;
           }
         }
-        drawFinisher();drawEffects();ctx.restore();
-        const bars=cinematic&&finisher?24:5;
+        drawActionTrails();drawFinisher();drawEffects();ctx.restore();
+        drawTransition();
+        const bars=cinematic&&(finisher||transition||entranceTimer>0)?24:5;
         ctx.fillStyle="#080b17e8";ctx.fillRect(0,0,W,bars);ctx.fillRect(0,H-bars,W,bars);
       }
       function animate(now){
@@ -875,7 +927,7 @@
         button.addEventListener("lostpointercapture",release);
         button.addEventListener("contextmenu",(event)=>event.preventDefault());
       });
-      $("main-button").addEventListener("click",()=>{if(mode==="paused")pause();else if(mode==="levelclear")advanceLevel();else start(campaignMode,mode==="lost");});
+      $("main-button").addEventListener("click",()=>{if(mode==="paused")pause();else start(campaignMode,mode==="lost");});
       $("pause").addEventListener("click",()=>{if(mode==="playing"||mode==="paused")pause();});
       $("restart").addEventListener("click",()=>start());
       $("campaign").addEventListener("click",()=>start(false));

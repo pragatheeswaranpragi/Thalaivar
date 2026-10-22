@@ -10,13 +10,13 @@ Serve the game directory with any static web server:
 python3 -m http.server 8000 --directory Mass-Hero-Soundtrack-Edition
 ```
 
-Choose **Start 3-level campaign** to fight:
+Choose **Start 3-level campaign** for one continuous run:
 
-1. **The Enforcer** — the bearded fighter at the dockyard, with running and heavy punches.
-2. **Kalpak Brother** — the moustached fighter at the mill, with rush attacks and a defensive guard. Dash attacks bypass his guard.
-3. **Bodhi Kalpak** — the final boss in the neon city, with stronger attacks and an enraged phase.
+1. **Dockyard wave → The Enforcer** — three street enemies, then the bearded fighter with running and heavy punches.
+2. **Mill wave → Kalpak Brother** — five enemies, then the moustached fighter with rush attacks and a defensive guard. Dash attacks bypass his guard.
+3. **Neon wave → Bodhi Kalpak** — six enemies, then the final boss with stronger attacks and an enraged phase.
 
-Each boss has distinct reference-based action sprites. Defeat a boss and choose **Next Level** to continue; gain 30 health and keep your energy and score. A defeat lets you retry the current level with full health and the score earned in earlier levels. **Restart** resets the campaign. **Quick duel: Bodhi Kalpak** retains the direct final-boss fight. Character animations must load before the fight starts; a failed download offers a retry instead of silently displaying a static character.
+Each boss has distinct reference-based action sprites. Waves, bosses, and levels advance automatically, with no menus or Next Level buttons between fights. In-arena titles, boss entrance zooms, letterboxing, impact pauses, knockout slow motion, and dash/rush trails connect the action while the music continues. Movement remains active during transitions. Defeat a boss to gain 30 health and carry your energy and score into the next wave. A defeat lets you retry the current wave or boss with full health and the score earned before that phase. **Restart** resets the campaign. **Quick duel: Bodhi Kalpak** retains the direct final-boss fight. Character animations must load before the fight starts; a failed download offers a retry instead of silently displaying a static character.
 
 ## Controls
 
