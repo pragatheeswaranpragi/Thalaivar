@@ -28,7 +28,7 @@
           else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
         }
       });
-      this.image.onload=()=>{try{this.decode();this.baseReady=true;this.ready=!!this.actionReady&&!this.error;this.paintCards();this.updateConfirm();}catch(error){this.fail();}};
+      this.image.onload=()=>{try{this.decode();this.baseReady=true;this.ready=!!this.actionReady&&!!this.mirnaReady&&!this.error;this.paintCards();this.updateConfirm();}catch(error){this.fail();}};
       this.image.onerror=()=>this.fail();
       this.actionFrames=[];const actionArt=this.actionImage=new Image();
       actionArt.onload=()=>{
@@ -40,11 +40,26 @@
           for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>80){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y);}
           this.actionFrames.push({canvas,x:left,y:top,w:right-left+1,h:bottom-top+1});
         }
-        this.actionReady=true;this.ready=!!this.baseReady&&!this.error;this.updateConfirm();
-      };actionArt.onerror=()=>this.fail();this.load();
+        this.actionReady=true;this.ready=!!this.baseReady&&!!this.mirnaReady&&!this.error;this.updateConfirm();
+      };actionArt.onerror=()=>this.fail();
+      this.mirnaFrames=[];this.mirnaImage=new Image();
+      this.mirnaImage.onload=()=>{
+        try{
+          this.mirnaFrames=[];
+          for(let i=0;i<4;i++){
+            const [sx,sy,w,h]=[[0,0,700,645],[760,0,360,645],[90,646,490,656],[750,646,365,656]][i],canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
+            const context=canvas.getContext("2d");context.drawImage(this.mirnaImage,sx,sy,w,h,0,0,w,h);
+            const pixels=context.getImageData(0,0,w,h).data;let left=w,top=h,right=0,bottom=0;
+            for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(pixels[(y*w+x)*4+3]>150){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y);}
+            if(right-left<10||bottom-top<10)throw new Error("Missing Mirna artwork");
+            this.mirnaFrames.push({canvas,x:left,y:top,w:right-left+1,h:bottom-top+1});
+          }
+          this.mirnaReady=true;this.ready=!!this.baseReady&&!!this.actionReady&&!this.error;this.paintCards();this.updateConfirm();
+        }catch(error){this.fail();}
+      };this.mirnaImage.onerror=()=>this.fail();this.load();
     }
     fail(){this.error=true;this.ready=false;this.updateConfirm();}
-    load(){this.error=false;this.ready=false;this.baseReady=false;this.actionReady=false;this.updateConfirm();const version=Date.now();this.image.src="assets/cameo-roster.png?retry="+version;this.actionImage.src="assets/cameo-combat-actions.png?retry="+version;}
+    load(){this.error=false;this.ready=false;this.baseReady=false;this.actionReady=false;this.mirnaReady=false;this.updateConfirm();const version=Date.now();this.image.src="assets/cameo-roster.png?retry="+version;this.actionImage.src="assets/cameo-combat-actions.png?retry="+version;this.mirnaImage.src="assets/mirna-cameo.png?retry="+version;}
     decode(){
       // The reference-based atlas has extended rifles, command arms and a wide SUV.
       const regions=[[0,65,274,566],[270,65,241,566],[512,65,256,566],[770,65,254,566],[0,634,304,435],[275,675,235,394],[505,630,338,440],[733,704,291,366],[0,1080,266,420],[239,1080,245,420],[450,1080,286,420],[609,1200,415,270]];
@@ -77,8 +92,12 @@
     updateConfirm(){const selected=ROSTER.find(r=>r.id===this.choice);$("cameo-confirm").disabled=!this.error&&(!selected||!this.ready);$("cameo-confirm").textContent=this.error?"Retry cameo artwork":!this.ready?"Loading cameo artwork…":selected?"ENTER WITH "+selected.name.toUpperCase():"SELECT ONE CAMEO";$("cameo-selection-status").textContent=this.error?"Artwork could not load. Retry to continue.":selected?selected.name+" selected · "+selected.ability:"Choose one ally to join Thalaivar.";}
     open(){this.lastFocus=document.activeElement;this.choice=this.support.selected;this.cards.forEach((card,i)=>{const selected=card.dataset.cameo===this.choice;card.setAttribute("aria-checked",String(selected));card.tabIndex=selected||!this.choice&&i===0?0:-1;});$("cameo-picker").hidden=false;this.updateConfirm();(this.cards.find(card=>card.dataset.cameo===this.choice)||this.cards[0]).focus();}
     close(){ $("cameo-picker").hidden=true;if(this.lastFocus&&this.lastFocus.isConnected)this.lastFocus.focus({preventScroll:true}); }
-    paintCards(){this.cards.forEach((card,i)=>{const canvas=card.querySelector("canvas"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,220,270);this.sprite(ctx,i,110,263,245,1);});}
+    paintCards(){this.cards.forEach((card,i)=>{const canvas=card.querySelector("canvas"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,220,270);if(ROSTER[i].id==="mirna")this.mirnaSprite(ctx,0,110,263,245,1);else this.sprite(ctx,i,110,263,245,1);});}
     sprite(ctx,index,x,y,height,face=1){const frame=this.frames[index];if(!frame)return;const width=frame.w/frame.h*height;ctx.save();ctx.translate(x,y);ctx.scale(face,1);ctx.drawImage(frame.canvas,frame.x,frame.y,frame.w,frame.h,-width/2,-height,width,height);ctx.restore();}
+    mirnaSprite(ctx,index,x,y,height,face=1){
+      const frame=this.mirnaFrames[index];if(!frame)return;
+      const width=frame.w/frame.h*height;ctx.save();ctx.translate(x,y);ctx.scale(face,1);ctx.drawImage(frame.canvas,frame.x,frame.y,frame.w,frame.h,-width/2,-height,width,height);ctx.restore();
+    }
     actionSprite(ctx,index,x,y,height,face){
       const frame=this.actionFrames[index];if(!frame)return false;
       const width=frame.w/frame.h*height;ctx.save();ctx.translate(x,y);ctx.scale(face,1);
@@ -98,8 +117,8 @@
     updateHUD(c){
       const r=ROSTER.find(r=>r.id===this.support.selected),a=this.support.active;
       $("cameo-name").textContent=r?r.name+" · "+r.ability:"CAMEO SUPPORT";
-      $("cameo-state").textContent=!r?"Pick one ally before play":c.celebration?"Victory celebration · wave 2 is next":c.phase==="boss"?"Boss duel · support locked":a?(Math.ceil(a.remaining*10)/10).toFixed(1)+"s remaining · normal waves only":this.support.used?"Used this wave · recharges next wave":"10 seconds · once per wave · C to summon";
-      $("cameo-call").disabled=!this.ready||!this.support.canSummon(c);$("cameo-call").textContent=a?"SUPPORT ACTIVE":c.celebration?"CELEBRATING":c.phase==="boss"?"BOSS LOCKED":"C · SUMMON";
+      $("cameo-state").textContent=!r?"Pick one ally before play":c.phase==="boss"?"Boss duel · support locked":a?(Math.ceil(a.remaining*10)/10).toFixed(1)+"s remaining · normal waves only":this.support.used?"Used this wave · recharges next wave":"10 seconds · once per wave · C to summon";
+      $("cameo-call").disabled=!this.ready||!this.support.canSummon(c);$("cameo-call").textContent=a?"SUPPORT ACTIVE":c.phase==="boss"?"BOSS LOCKED":"C · SUMMON";
       $("cameo-target").hidden=this.support.selected!=="narasimha";$("cameo-target").disabled=c.mode!=="playing"||c.phase!=="wave"||!this.support.targets(c).length;
       $("cameo-meter").style.width=a?a.remaining/10*100+"%":this.support.used?"0%":"100%";
       $("cameo-strip").style.setProperty("--cameo-color",r?r.color:"#8492b0");
@@ -135,6 +154,12 @@
         if(!this.actionSprite(ctx,g.recoil>0?9:8,g.x-g.face*g.recoil*24,g.y,138,g.face))this.sprite(ctx,2,g.x,g.y,138,g.face);
         a.agents.slice().sort((x,y)=>x.y-y.y).forEach(agent=>this.martialSprite(ctx,agent,a.agents.indexOf(agent)));
         if(g.recoil>0){ctx.fillStyle="#ffe1a1";ctx.beginPath();ctx.ellipse(g.x+g.face*54,g.y-85,8,3,0,0,Math.PI*2);ctx.fill();}
+      }else if(a.id==="mirna"){
+        const helper=a.helper,walking=helper.moving&&Math.sin(a.elapsed*9)>0,index=helper.helpTime>0?3:walking?2:1;
+        ctx.fillStyle="#080c1870";ctx.beginPath();ctx.ellipse(helper.x,helper.y+2,25,6,0,0,Math.PI*2);ctx.fill();
+        const bob=helper.moving?Math.abs(Math.sin(a.elapsed*9))*2:Math.sin(a.elapsed*2)*.7;
+        this.mirnaSprite(ctx,index,helper.x,helper.y-bob,140,helper.face);
+        ctx.fillStyle="#f8cede";ctx.font="bold 10px system-ui";ctx.textAlign="center";ctx.fillText("MIRNA · GENTLE SUPPORT",helper.x,helper.y-151);ctx.textAlign="left";
       }else if(a.id==="pragi"){
         this.martialSprite(ctx,a.fighter,-1);
       }

@@ -18,26 +18,24 @@ Choose **Start 3-level campaign**, then select exactly one cameo before entering
 
 Only 6/7/8 mobs can be active at once in waves 1/2/3, and at most two normal enemies can wind up attacks together. Reinforcements keep arriving until the full wave is defeated; the HUD counts all remaining hostiles. Mob health, damage and speed rise with the level. Bosses have 340/460/620 health, stronger damage and shorter recovery, with existing telegraphs, guards, rushes and the final enrage retained. Full-energy rocket fatalities still work.
 
+The first boss now returns directly to the continuous wave-two transition; the dance interlude has been removed.
+
 Each boss has distinct reference-based action sprites. Waves, bosses, and levels advance automatically, with no menus or Next Level buttons between fights. In-arena titles, boss entrance zooms, letterboxing, impact pauses, knockout slow motion, and dash/rush trails connect the action while the music continues. Movement remains active during transitions. Defeat a boss to gain 30 health and carry your energy and score into the next wave. A defeat lets you retry the current wave or boss with full health and the score earned before that phase. **Restart** resets the campaign. **Quick duel: Bodhi Kalpak** retains the direct final-boss fight. Character animations must load before the fight starts; a failed download offers a retry instead of silently displaying a static character.
 
 ## Cameo support
 
-Choose **Narasimha**, **Mathew**, **Hrithik**, or **Pragi** before each new game. Your selection remains through the continuous campaign; retries retain that ally.
+Choose **Narasimha**, **Mathew**, **Hrithik**, **Pragi**, or **Mirna** before each new game. Your selection remains through the continuous campaign; retries retain that ally.
 
 - **Narasimha — Sniper Support:** each off-screen shot instantly eliminates the selected normal enemy and up to two nearby normal enemies (three total). Press **T**, tap **Target**, or click a normal enemy in the arena to set the sniper target.
 - **Mathew — Vehicular Impact:** a heavy SUV drives across the arena, damaging groups in its lane.
 - **Hrithik — Strike Team:** Hrithik aims and fires three-round rifle bursts while three female tactical fighters pursue enemies with close-range punches and kicks.
 - **Pragi — Martial Arts:** Pragi runs toward targets and chains jabs, crosses, elbows and roundhouse kicks. Strikes land after a visible windup and require physical contact; there are no lightning or shockwave powers.
 
+- **Mirna — Gentle Support:** a photo-reference-based, animated companion who follows Thalaivar, restores up to 30 health over 10 seconds, and reduces incoming normal-mob damage by 25%. She deals no damage. Her protection ends on extraction and never applies to boss fights.
+
 Press **C** or tap **Summon** for one assist per normal wave. Each assist stays for exactly **10 unpaused seconds**, independent of combat slow motion or impact pauses. The timer and charge are displayed beneath the arena. A fresh wave restores the summon charge. If an assist clears the wave early, it stays on station until its 10-second extraction before the boss arrives.
 
 Cameos cannot be summoned during boss phases or transitions. Boss enemies are excluded from every cameo damage path, including AoE attacks and vehicle collisions. Thalaivar's existing rocket fatality remains separate and can still defeat bosses. Pausing or opening the restart selection screen freezes the assist clock; restarting or ending a run clears existing helpers.
-
-## First boss victory celebration
-
-Defeating **The Enforcer** in the campaign starts an **11.18-second Canvas dance celebration**, adapted from the supplied festival reference. It uses **48 choreography keys**, cubic interpolation between poses, articulated arms and legs, hand flourishes, moving cloth, a green-costumed lead and red-costumed supporting dancers. The uploaded video is not embedded or played. Original reference audio accompanies the animation when music is enabled.
-
-Pause freezes the choreography and music; **Continue to wave 2** skips the scene. It also advances automatically into wave two, preserving health, energy, score and the selected cameo. Cinema Off holds the characters and camera steady and removes confetti. This celebration is exclusive to the first campaign boss; the second boss and final ending keep their own transitions.
 
 ## Final victory cinematic
 

@@ -6,7 +6,8 @@
     {id:"narasimha",name:"Narasimha",ability:"Sniper Support",description:"Lock a target. Each off-screen sniper shot eliminates up to three normal enemies.",color:"#b8e39a",frame:0},
     {id:"mathew",name:"Mathew",ability:"Vehicular Impact",description:"A heavy SUV sweeps the street, crushing enemy groups in its path.",color:"#ffb183",frame:1},
     {id:"hrithik",name:"Hrithik",ability:"Strike Team",description:"Hrithik lays down rifle bursts while three female fighters rush in with punches and kicks.",color:"#d5adff",frame:2},
-    {id:"pragi",name:"Pragi",ability:"Martial Arts",description:"Pragi runs into close combat with flowing jabs, crosses, elbows and roundhouse kicks.",color:"#89eaff",frame:3}
+    {id:"pragi",name:"Pragi",ability:"Martial Arts",description:"Pragi runs into close combat with flowing jabs, crosses, elbows and roundhouse kicks.",color:"#89eaff",frame:3},
+    {id:"mirna",name:"Mirna",ability:"Gentle Support",description:"A calm companion restores up to 30 health and reduces incoming mob damage by 25% during her ten-second visit.",color:"#f6b9d1",frame:12}
   ];
   const isMob=e=>!!e&&!e.dead&&["grunt","heavy","minion"].includes(e.type)&&!e.isBoss;
   class CameoSupport{
@@ -21,14 +22,16 @@
     summon(c){
       if(!this.canSummon(c))return false;
       this.used=true;
-      this.active={id:this.selected,elapsed:0,remaining:DURATION,nextPulse:this.selected==="narasimha"?.6:.25,effects:[],target:null,
+      this.active={id:this.selected,elapsed:0,remaining:DURATION,nextPulse:this.selected==="narasimha"?.6:this.selected==="mirna"?.5:.25,effects:[],target:null,
         car:{x:-210,y:Math.max(350,Math.min(490,c.player.y)),face:1,hits:new Set()},
+        helper:{x:c.player.x-c.player.face*80,y:c.player.y-8,face:c.player.face,moving:false,helpTime:0},
         fighter:this.actor(c.player.x+35,c.player.y,c.player.face),
         gunner:{x:c.player.x-85,y:c.player.y,face:c.player.face,cooldown:0,recoil:0,burst:0},
         agents:Array.from({length:3},(_,i)=>this.actor(c.player.x-45+i*28,c.player.y-24+i*24,c.player.face))};
       this.emit({kind:"summon",id:this.selected,x:c.player.x,y:c.player.y});return true;
     }
     damage(e,amount,c){if(!this.active||c.phase!=="wave"||c.mode!=="playing"||c.transition||!isMob(e))return false;this.dealDamage(e,amount);return true;}
+    damageMultiplier(c){return this.active?.id==="mirna"&&c.mode==="playing"&&c.phase==="wave"&&!c.transition&&!c.enemies.some(e=>!e.dead&&(e.type==="boss"||e.isBoss))? .75:1;}
     actor(x,y,face){return {x,y,face,vx:0,vy:0,moving:false,walk:0,cooldown:0,attacking:0,combo:0,struck:false,targetId:null};}
     martial(actor,index,dt,c,damage,laneOffset=0){
       actor.cooldown=Math.max(0,actor.cooldown-dt);actor.walk+=dt*14;
@@ -90,6 +93,14 @@
           if(car.x>c.width+230||car.x< -230){
             car.x=Math.max(-230,Math.min(c.width+230,car.x));car.face*=-1;car.hits.clear();
             const mobs=this.targets(c);car.y=mobs.length?mobs.reduce((sum,e)=>sum+e.y,0)/mobs.length:c.player.y;
+          }
+        }else if(a.id==="mirna"&&!c.enemies.some(e=>!e.dead&&(e.type==="boss"||e.isBoss))){
+          const helper=a.helper,tx=Math.max(25,Math.min(c.width-25,c.player.x-c.player.face*80)),ty=Math.max(334,Math.min(502,c.player.y-8));
+          const distance=Math.hypot(tx-helper.x,ty-helper.y),blend=1-Math.exp(-6*step);
+          helper.moving=distance>8;helper.face=c.player.face;helper.x+=(tx-helper.x)*blend;helper.y+=(ty-helper.y)*blend;helper.helpTime=Math.max(0,helper.helpTime-step);
+          while(a.nextPulse<=end&&a.nextPulse<DURATION){
+            const before=Number.isFinite(c.player.hp)?c.player.hp:100;c.player.hp=Math.min(100,before+3);helper.helpTime=.6;
+            this.emit({kind:"care",healed:c.player.hp-before,x:helper.x,y:helper.y});a.nextPulse+=1;
           }
         }else if(a.id==="hrithik"||a.id==="pragi"){
           // Small combat steps preserve contact timing even after a slow browser frame.

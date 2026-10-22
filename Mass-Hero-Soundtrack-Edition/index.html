@@ -151,7 +151,7 @@
     .cameo-dialog {width:min(1050px,100%);padding:24px;border:1px solid #45526b;background:#111827;box-shadow:0 25px 100px #0009;border-radius:12px}
     .cameo-dialog h2 {font-size:clamp(25px,4vw,43px);font-style:italic;margin:8px 0;color:#ffe0a0;letter-spacing:-1px}
     .cameo-dialog>p {font-size:13px;color:#b9c6d9;line-height:1.5;margin:5px 0 20px}
-    .cameo-cards {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .cameo-cards {display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
     .cameo-card {min-width:0;text-align:left;padding:12px;border:2px solid #35425b;border-radius:8px;background:radial-gradient(ellipse at 50% 28%,#35415a,#182235 70%);color:#eef2fc;transition:border-color .15s,transform .15s}
     .cameo-card:hover {border-color:var(--cameo-color)}
     .cameo-card[aria-checked="true"] {border-color:var(--cameo-color);box-shadow:0 0 20px #ffd78a22;transform:translateY(-3px)}
@@ -181,7 +181,6 @@
     .ending-controls {position:absolute;bottom:12px;right:12px;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;z-index:7;max-width:90%}
     .ending-controls[hidden] {display:none}
     .ending-controls button {min-height:36px;padding:8px 12px;border:1px solid #c9b18880;border-radius:5px;background:#0e1627d9;color:#ffe3ad;font-size:10px;font-weight:850}
-    #stage.level-celebration .hud,#stage.level-celebration .boss-hud,#stage.level-celebration #wave-banner,#stage.level-celebration #combo,#stage.level-celebration #flash {visibility:hidden}
     #stage.victory-cinematic .hud,#stage.victory-cinematic .boss-hud,#stage.victory-cinematic #wave-banner,#stage.victory-cinematic #combo,#stage.victory-cinematic #flash {visibility:hidden}
     .ending-mode #cameo-strip,.ending-mode .touch,.ending-mode .controls-text {display:none}
     .ending-mode .toolbar {justify-content:center;min-height:48px}
@@ -211,7 +210,6 @@
         <div class="boss-hud" id="boss-hud"><div><strong>BODHI KALPAK</strong><span>FINAL BOSS</span></div><div class="meter"><div id="boss-bar"></div></div></div>
         <div id="flash"></div>
         <div class="ending-controls" id="ending-controls" hidden><button id="ending-audio" hidden>Play ending music</button><button id="ending-silent" hidden>Continue muted</button><button id="ending-skip">Skip cinematic →</button></div>
-        <div class="ending-controls" id="celebration-controls" hidden><button id="celebration-skip">Continue to wave 2 →</button></div>
         <div class="overlay" id="overlay">
           <span class="eyebrow" id="eyebrow">A ONE-HERO ARCADE EXPERIENCE</span>
           <h2 id="overlay-title">THE CITY<br><em>NEEDS A HERO.</em></h2>
@@ -252,7 +250,6 @@
   </div>
   <audio id="soundtrack" preload="metadata" playsinline aria-label="Game background music"></audio>
   <script src="victory-sequence.js"></script>
-  <script src="celebration-sequence.js"></script>
   <script src="cameo-support.js"></script>
   <script src="cameo-presentation.js"></script>
   <script>
@@ -270,7 +267,7 @@
       let bannerText = "", clock = 0, shake = 0, flash = 0, last = performance.now(), soundOn = true, audioContext;
       let musicWanted = true, musicTrack = null, seekOnLoad = null;
       const soundtrack = $("soundtrack");
-      const musicFiles = {fight:"assets/jailer2-theme.mp3",lost:"assets/netru-ponavai.mp3",victory:"assets/victory-reference-bgm.m4a",celebration:"assets/level-one-victory-bgm.m4a"};
+      const musicFiles = {fight:"assets/jailer2-theme.mp3",lost:"assets/netru-ponavai.mp3",victory:"assets/victory-reference-bgm.m4a"};
       let uid = 0;
       let campaignMode=true, spriteStatus="loading", checkpointScore=0, checkpointPhase="wave";
       let phase="wave", transition=null, entranceTimer=0, reinforcementQueue=[], reinforcementTimer=0, waveTotal=0;
@@ -285,16 +282,15 @@
       let hitPause=0, impactTime=0, slowMotion=0, cameraZoom=1,cameraCenterX=W/2;
       let pendingCameoStart=null;
       let victoryPlayed=false,pausedMode="playing";
-      const levelCelebration=new MassHeroCelebration.CelebrationSequence();
       const victorySequence=new MassHeroVictory.VictorySequence({loadAssets:false,complete:()=>end(true)});
       function showEndingAudioAction(){if(victorySequence.active&&musicWanted){$("ending-audio").hidden=false;$("ending-silent").hidden=false;}}
-      function resetVictory(){levelCelebration.reset();$("stage").classList.remove("level-celebration");$("celebration-controls").hidden=true;victorySequence.reset();victoryPlayed=false;pausedMode="playing";$("stage").classList.remove("victory-cinematic");$("app").classList.remove("ending-mode");$("ending-controls").hidden=true;$("ending-audio").hidden=true;$("ending-silent").hidden=true;}
+      function resetVictory(){victorySequence.reset();victoryPlayed=false;pausedMode="playing";$("stage").classList.remove("victory-cinematic");$("app").classList.remove("ending-mode");$("ending-controls").hidden=true;$("ending-audio").hidden=true;$("ending-silent").hidden=true;}
       function beginVictory(){
         victorySequence.load();victoryPlayed=true;cameo.stop();keys.clear();finisher=null;transition=null;shake=0;flash=0;mode="ending";
         victorySequence.start({reducedMotion:!cinematic});$("overlay").classList.add("hidden");$("stage").classList.add("victory-cinematic");$("app").classList.add("ending-mode");$("ending-controls").hidden=false;
         $("pause").textContent="Ⅱ Pause";cueMusic("victory");hud();
       }
-      const cameoContext=()=>({mode,phase,transition:!!transition,celebration:!!transition?.celebration,enemies,player,width:W,height:H});
+      const cameoContext=()=>({mode,phase,transition:!!transition,enemies,player,width:W,height:H});
       const cameo=new MassHeroCameos.CameoSupport({
         dealDamage:(enemy,amount)=>{if(cameo.active&&phase==="wave"&&MassHeroCameos.isMob(enemy))hit(enemy,amount,0,true);},
         emit:event=>{
@@ -303,6 +299,7 @@
           if(event.kind==="impact"){ring(event.x,event.y-30,"#ffc187",110);if(cinematic)shake=Math.max(shake,8);beep(85,.12,"sawtooth",.04);}
           if(event.kind==="melee"){burst(event.x,event.y,5,"#ffd4a2",.35);if(cinematic)shake=Math.max(shake,event.kick?3:1.5);beep(event.kick?95:130,.045,"triangle",.018);}
           if(event.kind==="rifle"){burst(event.x,event.y,2,"#ffe6a3",.2);beep(155,.035,"sawtooth",.012);}
+          if(event.kind==="care"&&event.healed>0){pop(player.x,player.y-155,"+"+event.healed+" HP · MIRNA","#ffcedf");beep(520,.09,"sine",.012);}
           if(event.kind==="expired"&&player)pop(player.x,player.y-150,"SUPPORT EXTRACTED","#c8ddf2");
         }
       });
@@ -400,7 +397,7 @@
       }
       function resumeMusic() {
         if (!musicWanted || !musicTrack || typeof soundtrack.play !== "function") return;
-        if (((musicTrack==="fight"||musicTrack==="celebration")&&mode!=="playing") || (musicTrack==="lost"&&mode!=="lost") || (musicTrack==="victory"&&mode!=="ending")) return;
+        if ((musicTrack==="fight"&&mode!=="playing") || (musicTrack==="lost"&&mode!=="lost") || (musicTrack==="victory"&&mode!=="ending")) return;
         if (seekOnLoad!==null && soundtrack.readyState<1) return;
         if (seekOnLoad!==null) {
           try { soundtrack.currentTime=Math.min(seekOnLoad,Math.max(0,soundtrack.duration-.1)); } catch (_) {}
@@ -455,7 +452,6 @@
       }
       function spawnBoss(){
         if(wave===3)victorySequence.load();
-        if(wave===1)levelCelebration.load();
         phase="boss";reinforcementQueue=[];cameo.stop();victoryDelay=0;
         const entryX=player.x<W/2?760:200;
         const actor=enemy("boss",entryX,clamp(player.y,350,480));
@@ -465,9 +461,7 @@
         ring(actor.x,actor.y-10,"#ffbc86",140);shake=cinematic?12:0;beep(85,.35,"sawtooth",.065);hud();
       }
       function beginTransition(kind){
-        const celebration=kind==="level"&&wave===1&&campaignMode;
-        transition={kind,time:0,duration:celebration?MassHeroCelebration.DURATION:cinematic?2.1:1.1,celebration};
-        if(celebration){levelCelebration.start({reducedMotion:!cinematic});cameo.stop();keys.clear();$("stage").classList.add("level-celebration");$("celebration-controls").hidden=false;cueMusic("celebration");}
+        transition={kind,time:0,duration:cinematic?2.1:1.1};
         bannerTimer=0;$("wave-banner").style.opacity="0";
         player.celebrateTime=1.4;beep(kind==="boss"?210:650,.25,"triangle",.045);
         if(kind==="boss"){
@@ -611,7 +605,8 @@
           ring(player.x,player.y-65,"#8cf2ff",65);pop(player.x,player.y-155,"BLOCK!","#a4edff");beep(360,.08,"triangle");hud();return;
         }
         if(keys.has("i"))pop(player.x,player.y-155,"GUARD BROKEN!","#ff8d98",true);
-        const dmg=e.type==="boss"?LEVELS[e.bossId].damage:e.type==="heavy"?16+wave*2:11+wave*2;
+        const baseDamage=e.type==="boss"?LEVELS[e.bossId].damage:e.type==="heavy"?16+wave*2:11+wave*2;
+        const dmg=Math.ceil(baseDamage*cameo.damageMultiplier(cameoContext()));
         player.hp=Math.max(0,player.hp-dmg);player.invuln=.85;
         player.x=clamp(player.x+e.face*27,30,930);shake=12;flash=.11;combo=0;comboTimer=0;
         burst(player.x,player.y-54,16,"#ff6a7e");
@@ -701,10 +696,9 @@
         }
         p.x=clamp(p.x,30,930);p.y=clamp(p.y,327,510);
         if(transition){
-          if(transition.celebration){levelCelebration.update(cameoDt);transition.time=levelCelebration.elapsed;}else transition.time+=dt;
+          transition.time+=dt;
           if(transition.time>=transition.duration){
-            const kind=transition.kind,celebration=transition.celebration;transition=null;fallen=[];
-            if(celebration){levelCelebration.reset();$("stage").classList.remove("level-celebration");$("celebration-controls").hidden=true;cueMusic("fight");}
+            const kind=transition.kind;transition=null;fallen=[];
             p.celebrateTime=0;p.invuln=Math.max(p.invuln,.6);
             if(kind==="boss")spawnBoss();else spawnWave();
           }
@@ -994,15 +988,6 @@
         ctx.font="700 12px system-ui";ctx.fillStyle="#a8cfde";ctx.fillText("KEEP MOVING · THE FIGHT CONTINUES",W/2,252);ctx.restore();
       }
       function draw(){
-        $("celebration-controls").hidden=!transition?.celebration||mode!=="playing";
-        if(transition?.celebration){
-          levelCelebration.render(ctx,W,H,{drawHero:(context,x,y)=>{
-            if(heroSheet?.complete&&heroSheet.naturalWidth>=1536){
-              const col=levelCelebration.reducedMotion?0:Math.floor(levelCelebration.elapsed*5)%4;
-              context.drawImage(heroSheet,col*192,3*208,192,208,x-77,y-164,154,166);
-            }
-          }});return;
-        }
         if(victorySequence.active&&(mode==="ending"||mode==="paused"||mode==="selecting")){victorySequence.render(ctx,W,H);return;}
         ctx.save();
         const targetZoom=cinematic&&mode==="playing"?(finisher?1.16:entranceTimer>0?1.10:transition?1.035:impactTime>0?1.045:1):1;
@@ -1076,7 +1061,7 @@
       $("cinema").textContent=cinematic?"Cinema On":"Cinema Off";
       $("cinema").setAttribute("aria-pressed",String(cinematic));
       $("cinema").addEventListener("click",()=>{
-        cinematic=!cinematic;levelCelebration.reducedMotion=!cinematic;victorySequence.reducedMotion=!cinematic;if(!cinematic)victorySequence.pause();$("cinema").textContent=cinematic?"Cinema On":"Cinema Off";
+        cinematic=!cinematic;victorySequence.reducedMotion=!cinematic;if(!cinematic)victorySequence.pause();$("cinema").textContent=cinematic?"Cinema On":"Cinema Off";
         $("cinema").setAttribute("aria-pressed",String(cinematic));
         if(!cinematic){hitPause=0;slowMotion=0;impactTime=0;cameraZoom=1;}
       });
@@ -1089,7 +1074,6 @@
         $("music").textContent=musicWanted?"♫ BGM On":"♫ BGM Off";
         if(musicWanted){if(mode==="ending"&&musicTrack==="victory")seekOnLoad=victorySequence.elapsed;resumeMusic();}else{soundtrack.pause();$("ending-audio").hidden=true;$("ending-silent").hidden=true;}
       });
-      $("celebration-skip").addEventListener("click",()=>{if(transition?.celebration&&mode==="playing")levelCelebration.finish();});
       $("ending-skip").addEventListener("click",()=>{if(victorySequence.active)victorySequence.finish();});
       $("ending-audio").addEventListener("click",()=>{if(mode==="ending"){musicWanted=true;$("music").textContent="♫ BGM On";cueMusic("victory",victorySequence.elapsed);}});
       $("ending-silent").addEventListener("click",()=>{musicWanted=false;soundtrack.pause();$("music").textContent="♫ BGM Off";$("ending-audio").hidden=true;$("ending-silent").hidden=true;});

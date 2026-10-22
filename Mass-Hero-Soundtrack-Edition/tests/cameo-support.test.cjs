@@ -76,3 +76,19 @@ test('Pragi windup allows an enemy to dodge before contact',()=>{
 test('expired and stopped helpers cannot keep dealing damage',()=>{
  const {support,context,hits}=fixture('pragi',[mob(1,300,420,5000)]);support.summon(context);support.update(10,context);const count=hits.length;support.update(10,context);assert.equal(hits.length,count);assert.equal(support.damage(context.enemies[0],10,context),false);support.resetWave(2);support.summon(context);support.stop();support.update(10,context);assert.equal(hits.length,count);
 });
+test('Mirna restores thirty health over ten seconds without attacking',()=>{
+ const {support,context,hits,events}=fixture('mirna');context.player.hp=50;support.summon(context);support.update(.5,context);assert.equal(context.player.hp,53);
+ support.update(9.5,context);assert.equal(context.player.hp,80);assert.equal(support.active,null);assert.equal(hits.length,0);assert.equal(events.filter(e=>e.kind==='care').length,10);
+});
+test('Mirna caps health, follows smoothly, and pause freezes care',()=>{
+ const {support,context}=fixture('mirna');context.player.hp=99;support.summon(context);const x=support.active.helper.x;context.player.x=600;support.update(.25,context);
+ assert(support.active.helper.x>x);assert(support.active.helper.x<520);assert(support.active.helper.moving);
+ support.update(5,{...context,mode:'paused'});assert.equal(context.player.hp,99);assert.equal(support.active.elapsed,.25);
+ support.update(.25,context);assert.equal(context.player.hp,100);support.update(9.5,context);assert.equal(context.player.hp,100);
+});
+test('Mirna protection lasts only during normal active waves',()=>{
+ const {support,context}=fixture('mirna');assert.equal(support.damageMultiplier(context),1);support.summon(context);assert.equal(support.damageMultiplier(context),.75);
+ for(const patch of [{phase:'boss'},{transition:true},{mode:'paused'},{enemies:[{...mob(1),type:'boss'}]}])assert.equal(support.damageMultiplier({...context,...patch}),1);
+ context.player.hp=30;support.update(1,{...context,enemies:[{...mob(1),type:'boss'}]});assert.equal(context.player.hp,30);
+ support.update(9,context);assert.equal(support.damageMultiplier(context),1);
+});
