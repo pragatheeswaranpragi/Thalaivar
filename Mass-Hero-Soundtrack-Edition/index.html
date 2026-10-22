@@ -219,7 +219,7 @@
           <span class="landing-slogan landing-only">Tiger ka Hukum</span>
           <p id="overlay-message">One man. An empire of enemies. Step into Thalaivar’s world and make the city remember his name.</p>
           <div class="chips"><span><b>03</b> RELENTLESS WAVES</span><span><b>03</b> BOSS SHOWDOWNS</span><span><b>05</b> CAMEO ALLIES</span></div>
-          <a href="cinema.html" class="cinema-entry landing-only">ENTER 3D CINEMA →</a><button id="main-button" disabled>PREPARING THE 2D ARENA…</button><button id="campaign">Challenge Bodhi Kalpak ↗</button><span class="hint">FREE TO PLAY <i>·</i> KEYBOARD & TOUCH <i>·</i> NO DOWNLOAD</span><span class="poster-credit landing-only">THE CITY HAS RULES.<br><strong>HE IS THE EXCEPTION.</strong></span>
+          <button id="main-button" disabled>PREPARING THE 2D ARENA…</button><button id="campaign">Challenge Bodhi Kalpak ↗</button><span class="hint">FREE TO PLAY <i>·</i> KEYBOARD & TOUCH <i>·</i> NO DOWNLOAD</span><span class="poster-credit landing-only">THE CITY HAS RULES.<br><strong>HE IS THE EXCEPTION.</strong></span>
         </div>
       </section>
       <div class="cameo-strip" id="cameo-strip" aria-label="Cameo support">
@@ -262,12 +262,14 @@
   <script src="victory-sequence.js"></script>
   <script src="cameo-support.js"></script>
   <script src="cameo-presentation.js"></script>
-  <script>
+  <script type="module">
+    import { TwoDRenderer } from "./two-d-renderer.mjs";
     (() => {
       "use strict";
       const $ = (id) => document.getElementById(id);
       const canvas = $("game");
-      const ctx = canvas.getContext("2d");
+      const display = new TwoDRenderer(canvas);
+      let ctx = display.context("background");
       const W = canvas.width, H = canvas.height, TAU = Math.PI * 2;
       const clamp = (x, a, b) => Math.max(a, Math.min(x, b));
       const rand = (a, b) => a + Math.random() * (b - a);
@@ -351,7 +353,7 @@
       function finishSpriteLoad(){
         if(!spriteLoads.bodhi||!spriteLoads.campaign)return;
         spriteStatus="ready";
-        if(mode==="menu"){$("main-button").disabled=false;$("main-button").textContent="PLAY ORIGINAL 2D →";}
+        if(mode==="menu"){$("main-button").disabled=false;$("main-button").textContent="PLAY JAILER →";}
       }
       function spriteFailure(){spriteStatus="error";$("main-button").disabled=false;$("main-button").textContent="RETRY CHARACTER DOWNLOAD";}
       if(villainSheet&&campaignSheet){
@@ -1002,16 +1004,17 @@
         ctx.font="700 12px system-ui";ctx.fillStyle="#a8cfde";ctx.fillText("KEEP MOVING · THE FIGHT CONTINUES",W/2,252);ctx.restore();
       }
       function draw(){
-        if(victorySequence.active&&(mode==="ending"||mode==="paused"||mode==="selecting")){victorySequence.render(ctx,W,H);return;}
-        ctx.save();
+        display.beginFrame();
+        if(victorySequence.active&&(mode==="ending"||mode==="paused"||mode==="selecting")){ctx=display.context("overlay");victorySequence.render(ctx,W,H);display.render();return;}
+        ctx=display.context("background");
         const targetZoom=cinematic&&mode==="playing"?(finisher?1.16:entranceTimer>0?1.10:transition?1.035:impactTime>0?1.045:1):1;
         cameraZoom+=(targetZoom-cameraZoom)*.12;
         const enteringBoss=entranceTimer>0?enemies.find(e=>e.type==="boss"):null;
         const focus=finisher?(player.x+finisher.target.x)/2:enteringBoss?(player.x+enteringBoss.x)/2:player?player.x:W/2;
         const cx=clamp(focus,W/(2*cameraZoom),W-W/(2*cameraZoom));cameraCenterX=cx;
-        ctx.translate(W/2,H/2);ctx.scale(cameraZoom,cameraZoom);ctx.translate(-cx,-H/2);
-        if(cinematic&&shake>0)ctx.translate(rand(-shake,shake),rand(-shake*.5,shake*.5));
+        display.setCamera(cameraZoom,cx,cinematic&&shake>0?rand(-shake,shake):0,cinematic&&shake>0?rand(-shake*.5,shake*.5):0);
         background();
+        ctx=display.context("world");
         if(player){
           cameoView.renderProtection(ctx,cameoContext(),clock,cinematic);
           if(player.dashTime>0){ctx.save();ctx.globalAlpha=.22;drawActor(Object.assign({},player,{x:player.x-player.face*42}),true);ctx.restore();}
@@ -1025,10 +1028,12 @@
           }
         }
         cameoView.render(ctx,cameoContext(),clock,cinematic);
-        drawActionTrails();drawFinisher();drawEffects();ctx.restore();
+        drawActionTrails();drawFinisher();drawEffects();
+        ctx=display.context("overlay");
         drawTransition();
         const bars=cinematic&&(finisher||transition||entranceTimer>0)?24:5;
         ctx.fillStyle="#080b17e8";ctx.fillRect(0,0,W,bars);ctx.fillRect(0,H-bars,W,bars);
+        display.render();
       }
       function animate(now){
         // Keep combat at real-time speed on slower phones, with small collision steps.
