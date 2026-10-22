@@ -996,7 +996,12 @@
       function draw(){
         $("celebration-controls").hidden=!transition?.celebration||mode!=="playing";
         if(transition?.celebration){
-          levelCelebration.render(ctx,W,H,{drawHero:(context,x,y)=>drawActor({...player,x,y,face:-1,celebrateTime:1.4},true)});return;
+          levelCelebration.render(ctx,W,H,{drawHero:(context,x,y)=>{
+            if(heroSheet?.complete&&heroSheet.naturalWidth>=1536){
+              const col=levelCelebration.reducedMotion?0:Math.floor(levelCelebration.elapsed*5)%4;
+              context.drawImage(heroSheet,col*192,3*208,192,208,x-77,y-164,154,166);
+            }
+          }});return;
         }
         if(victorySequence.active&&(mode==="ending"||mode==="paused"||mode==="selecting")){victorySequence.render(ctx,W,H);return;}
         ctx.save();
