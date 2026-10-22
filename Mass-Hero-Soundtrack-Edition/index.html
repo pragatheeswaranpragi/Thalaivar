@@ -73,7 +73,11 @@
     .dpad button {color:#eef6ff;background:#28364c;border:1px solid #61708c;border-radius:9px;font-size:17px}
     .dpad .up {grid-area:1/2}.dpad .left {grid-area:2/1}.dpad .down {grid-area:3/2}.dpad .right {grid-area:2/3}
     .dpad button.pressed {background:#7993b5}
-    .actions {display:flex;align-items:center;gap:9px}
+    .actions {display:grid;grid-template-columns:63px 81px 63px;align-items:center;gap:5px 9px}
+    .actions .dash {grid-area:1/1;height:38px}
+    .actions .guard {grid-area:2/1;height:38px}
+    .actions .punch {grid-area:1/2/3/3}
+    .actions .special {grid-area:1/3/3/4}
     .actions button {height:63px;width:63px;border-radius:50%;border:2px solid #a0b5c9;background:#263b55;color:white;font-size:10px;font-weight:950}
     .actions .punch {width:81px;height:81px;background:linear-gradient(135deg,#ff9b67,#df3a6d);border-color:#ffc196;box-shadow:0 3px 20px #df3a6d65}
     .actions .special {background:linear-gradient(135deg,#d9b056,#925449);border-color:#ffe09b;font-size:22px}
@@ -113,7 +117,7 @@
     @media(max-width:440px) {
       .dpad {grid-template:repeat(3,33px)/repeat(3,37px)}
       .touch {padding:9px 12px}
-      .actions {gap:5px}
+      .actions {gap:4px 5px;grid-template-columns:54px 68px 54px}
       .actions button {height:54px;width:54px}
       .actions .punch {width:68px;height:68px}
     }
@@ -138,7 +142,7 @@
 <body>
   <div class="app" id="app">
     <header class="header">
-      <div class="brand"><div class="brand-mark">M<span>H</span></div><div><h1>MASS HERO</h1><p>NEON RECKONING · ARCADE EDITION</p></div></div>
+      <div class="brand"><div class="brand-mark">M<span>H</span></div><div><h1>MASS HERO</h1><p>NEON RECKONING · BODHI SHOWDOWN</p></div></div>
       <div class="header-right"><span class="status">SINGLE PLAYER</span><button id="fullscreen" aria-label="Toggle fullscreen">⛶ Fullscreen</button></div>
     </header>
     <main class="play-area">
@@ -159,9 +163,9 @@
         <div class="overlay" id="overlay">
           <span class="eyebrow" id="eyebrow">A ONE-HERO ARCADE EXPERIENCE</span>
           <h2 id="overlay-title">THE CITY<br><em>NEEDS A HERO.</em></h2>
-          <p id="overlay-message">Three waves. One street. No backing down.</p>
-          <div class="chips"><span>3 WAVES</span><span>COMBO SYSTEM</span><span>BOSS FIGHT</span></div>
-          <button id="main-button">▶ &nbsp; ENTER THE ARENA</button><span class="hint">MOVE · FIGHT · CHARGE · CONQUER</span>
+          <p id="overlay-message">Bodhi Kalpak is waiting. Dodge his rush. Break his guard. Finish with a rocket.</p>
+          <div class="chips"><span>ANIMATED BOSS DUEL</span><span>GUARD + DASH</span><span>ROCKET FATALITY</span></div>
+          <button id="main-button" disabled>LOADING FIGHT ANIMATIONS…</button><button id="campaign" style="background:transparent;color:#ffe3aa;border:1px solid #9b8ba175;padding:7px 15px;border-radius:4px;font-size:11px">Play 3-wave campaign</button><span class="hint">MOVE · FIGHT · CHARGE · CONQUER</span>
         </div>
       </section>
       <div class="touch" aria-label="Touch game controls">
@@ -172,20 +176,20 @@
           <button data-control="d" class="right" aria-label="Move right">▶</button>
         </div>
         <div class="actions">
-          <button data-control="k" class="dash">DASH</button>
+          <button data-control="k" class="dash">DASH</button><button data-control="i" class="guard">GUARD</button>
           <button data-control="j" class="punch">PUNCH</button>
           <button data-control="l" class="special">★<small>FATALITY</small></button>
         </div>
       </div>
     </main>
     <div class="toolbar">
-      <div class="controls-text"><span><kbd>WASD</kbd> Move</span><span><kbd>J</kbd> Punch</span><span><kbd>K</kbd> Dash</span><span><kbd>L</kbd> Fatality · 100% energy</span><span><kbd>↓ → ↓ → R</kbd> Rocket finisher · 100% energy</span></div>
+      <div class="controls-text"><span><kbd>WASD</kbd> Move</span><span><kbd>J</kbd> Hold to combo</span><span><kbd>I</kbd> Hold guard</span><span><kbd>K</kbd> Dash</span><span><kbd>L</kbd> Fatality · 100% energy</span><span><kbd>↓ → ↓ → R</kbd> Rocket finisher · 100% energy</span></div>
       <div class="toolbar-actions">
         <button id="music" aria-label="Toggle background music">♫ BGM On</button>
         <button id="cinema" aria-pressed="true">Cinema On</button><button id="sound">♪ Effects On</button><button id="pause">Ⅱ Pause</button><button id="restart">↻ Restart</button>
       </div>
     </div>
-    <footer class="footer"><span>★ THALAIVAR ANIMATION · JAILER 2 FIGHT THEME</span><span>MADE FOR PRAGI · 2026</span></footer>
+    <footer class="footer"><span>★ BODHI SHOWDOWN · LIVE COMBAT EDITION</span><span>MADE FOR PRAGI · 2026</span></footer>
   </div>
   <audio id="soundtrack" preload="metadata" playsinline aria-label="Game background music"></audio>
   <script>
@@ -205,6 +209,7 @@
       const soundtrack = $("soundtrack");
       const musicFiles = {fight:"assets/jailer2-theme.mp3",lost:"assets/netru-ponavai.mp3"};
       let uid = 0;
+      let campaignMode=false, spriteStatus="loading";
       let finisher = null, comboInput = [], fallen = [], victoryDelay = 0;
       let cinematic = !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       let hitPause=0, impactTime=0, slowMotion=0, cameraZoom=1;
@@ -213,23 +218,30 @@
       const villainSheet=typeof Image === "function"?new Image():null;
       if(villainSheet){
         villainSheet.onload=()=>{
+          try{
+          villainFrames.length=0;
           const surface=document.createElement("canvas");surface.width=villainSheet.naturalWidth;surface.height=villainSheet.naturalHeight;
           const paint=surface.getContext("2d");paint.drawImage(villainSheet,0,0);
-          const cellW=surface.width/4,cellH=surface.height/2;
+          // Explicit regions keep the extended punch inside its frame.
+          const regions=[[0,0,.25,.515],[.25,0,.25,.515],[.5,0,.25,.515],[.75,0,.25,.515],[0,.525,.275,.475],[.28,.525,.245,.475],[.535,.525,.215,.475],[.77,.525,.23,.475]];
           for(let frame=0;frame<8;frame++){
-            const x=Math.floor(frame%4*cellW),y=Math.floor(Math.floor(frame/4)*cellH),w=Math.floor(cellW),h=Math.floor(cellH);
+            const region=regions[frame];
+            const x=Math.floor(region[0]*surface.width),y=Math.floor(region[1]*surface.height),w=Math.floor(region[2]*surface.width),h=Math.floor(region[3]*surface.height);
             const pixels=paint.getImageData(x,y,w,h).data;
             let left=w,top=h,right=0,bottom=0;
             for(let py=0;py<h;py++)for(let px=0;px<w;px++)if(pixels[(py*w+px)*4+3]>60){left=Math.min(left,px);right=Math.max(right,px);top=Math.min(top,py);bottom=Math.max(bottom,py);}
             villainFrames.push({x:x+left,y:y+top,w:Math.max(1,right-left+1),h:Math.max(1,bottom-top+1)});
           }
+          if(villainFrames.some(frame=>frame.w<20||frame.h<20))throw new Error("Incomplete animation sheet");
+          spriteStatus="ready";
+          if(mode==="menu"){$("main-button").disabled=false;$("main-button").textContent="▶ FIGHT BODHI KALPAK";}
+          }catch(error){villainSheet.onerror();}
         };
-        villainSheet.src="assets/bodhi-kalpak-actions.png";
+        villainSheet.onerror=()=>{spriteStatus="error";$("main-button").disabled=false;$("main-button").textContent="RETRY CHARACTER DOWNLOAD";};
+        villainSheet.src="assets/bodhi-kalpak-showdown.png";
       }
       const heroSheet = typeof Image === "function" ? new Image() : null;
       if (heroSheet) heroSheet.src = "assets/thalaivar-spritesheet.png";
-      const villainAvatar = typeof Image === "function" ? new Image() : null;
-      if(villainAvatar) villainAvatar.src="assets/bodhi-kalpak.png";
       const skyline = Array.from({length:28}, (_, i) => ({x:i*37-16,w:33+(i*13%29),h:75+(i*43%105),seed:i*37}));
       const backline = Array.from({length:19}, (_, i) => ({x:i*58-24,w:48+(i*9%24),h:110+(i*31%115)}));
       const stars = Array.from({length:45}, () => ({x:rand(0,W),y:rand(10,245),r:rand(.5,1.5),phase:rand(0,TAU)}));
@@ -293,7 +305,7 @@
       function ring(x,y,color,size=190){rings.push({x,y,r:10,max:size,life:.45,color});}
       function enemy(type,x,y){
         const hp=type==="boss"?360:type==="heavy"?100:64;
-        return{id:++uid,type,x,y,hp,maxHp:hp,face:-1,speed:type==="boss"?80:type==="heavy"?82:rand(95,128),range:type==="boss"?84:type==="heavy"?60:51,cooldown:rand(.35,1.2),windup:0,stun:0,flash:0,attackAnim:0,attackIndex:0,attackKind:"punch",moving:false,walk:rand(0,TAU),dead:false};
+        return{id:++uid,type,x,y,hp,maxHp:hp,face:-1,speed:type==="boss"?185:type==="heavy"?82:rand(95,128),range:type==="boss"?84:type==="heavy"?60:51,cooldown:rand(.35,1.2),windup:0,stun:0,flash:0,attackAnim:0,attackIndex:0,attackKind:"punch",moving:false,rushTime:0,rushHit:false,rushFace:1,enraged:false,walk:rand(0,TAU),dead:false};
       }
       function spawnWave() {
         wave++;
@@ -304,18 +316,23 @@
           enemies=[enemy("grunt",765,340),enemy("grunt",855,430),enemy("heavy",910,485),enemy("grunt",700,505),enemy("grunt",845,380)];
           bannerText="WAVE TWO · NO MERCY";
         } else {
-          enemies=[enemy("boss",795,405),enemy("grunt",890,487),enemy("grunt",712,340)];
-          bannerText="FINAL WAVE · BODHI KALPAK";
+          enemies=campaignMode?[enemy("boss",795,405),enemy("grunt",890,487),enemy("grunt",712,340)]:[enemy("boss",665,421)];
+          bannerText=campaignMode?"FINAL WAVE · BODHI KALPAK":"BODHI KALPAK · SHOWDOWN";
           burst(795,350,35,"#f6659d",2);shake=12;beep(95,.5,"sawtooth",.07);
         }
         bannerTimer=2.1;nextWave=0;hud();
       }
-      function start() {
+      function start(campaign=campaignMode) {
+        if(spriteStatus!=="ready"){
+          if(spriteStatus==="error"){spriteStatus="loading";$("main-button").disabled=true;$("main-button").textContent="LOADING FIGHT ANIMATIONS…";villainSheet.src="assets/bodhi-kalpak-showdown.png?retry="+Date.now();}
+          return;
+        }
+        campaignMode=campaign===true;
         keys.clear();finisher=null;comboInput=[];fallen=[];victoryDelay=0;hitPause=0;slowMotion=0;impactTime=0;cameraZoom=1;
-        player={x:170,y:421,hp:100,rage:0,face:1,cooldown:0,punchTime:0,dashTime:0,dashCooldown:0,dashX:1,dashY:0,invuln:0,specialTime:0,celebrateTime:0,moving:false,walk:0};
+        player={x:campaignMode?170:280,y:421,hp:100,rage:0,face:1,cooldown:0,punchTime:0,dashTime:0,dashCooldown:0,dashX:1,dashY:0,invuln:0,specialTime:0,celebrateTime:0,moving:false,blocking:false,dashHits:[],walk:0};
         enemies=[];particles=[];rings=[];floaters=[];
-        score=0;wave=0;combo=0;comboTimer=0;nextWave=0;shake=0;flash=0;clock=0;mode="playing";
-        $("overlay").classList.add("hidden");$("pause").textContent="Ⅱ Pause";spawnWave();
+        score=0;wave=campaignMode?0:2;combo=0;comboTimer=0;nextWave=0;shake=0;flash=0;clock=0;mode="playing";
+        $("overlay").classList.add("hidden");$("campaign").hidden=true;$("pause").textContent="Ⅱ Pause";spawnWave();
         $("stage").focus({preventScroll:true});
         cueMusic("fight");
         beep(470,.14);
@@ -325,7 +342,7 @@
         $("overlay-message").textContent=description;
         $("eyebrow").textContent=eyebrow;
         $("main-button").textContent=button;
-        $("overlay").classList.remove("hidden");
+        $("overlay").classList.remove("hidden");$("campaign").hidden=mode==="paused";
       }
       function end(won) {
         mode=won?"won":"lost";
@@ -382,7 +399,7 @@
         }
       }
       function punch(){
-        if(mode!=="playing"||finisher||player.cooldown>0||player.dashTime>0)return;
+        if(mode!=="playing"||finisher||keys.has("i")||player.cooldown>0||player.dashTime>0)return;
         player.cooldown=.29;player.punchTime=.22;beep(260,.075,"square",.018);
         let landed=false;
         for(const e of enemies){
@@ -396,7 +413,7 @@
         if(mode!=="playing"||finisher||player.dashCooldown>0||player.dashTime>0)return;
         const v=move();
         player.dashX=v.x||player.face;player.dashY=v.y;
-        player.dashTime=.18;player.dashCooldown=1.35;player.invuln=Math.max(player.invuln,.27);
+        player.dashHits=[];player.dashTime=.18;player.dashCooldown=1.35;player.invuln=Math.max(player.invuln,.27);
         burst(player.x,player.y-15,10,"#7de6fa",.55);beep(420,.15,"sine");
       }
       function special(){
@@ -423,6 +440,11 @@
       }
       function hurt(e){
         if(player.invuln>0||player.dashTime>0||mode!=="playing")return;
+        if(keys.has("i")&&e.attackKind!=="rush"){
+          player.invuln=.3;player.rage=clamp(player.rage+9,0,100);
+          ring(player.x,player.y-65,"#8cf2ff",65);pop(player.x,player.y-155,"BLOCK!","#a4edff");beep(360,.08,"triangle");hud();return;
+        }
+        if(keys.has("i"))pop(player.x,player.y-155,"GUARD BROKEN!","#ff8d98",true);
         const dmg=e.type==="boss"?19:e.type==="heavy"?13:9;
         player.hp=Math.max(0,player.hp-dmg);player.invuln=.85;
         player.x=clamp(player.x+e.face*27,30,930);shake=12;flash=.11;combo=0;comboTimer=0;
@@ -439,7 +461,7 @@
         $("energy-bar").style.width=player.rage+"%";
         $("energy-text").textContent=Math.floor(player.rage)+"%"+(player.rage>=100?" FATALITY READY!":"");
         $("score").textContent=String(score).padStart(6,"0");
-        $("wave-label").textContent="WAVE "+String(wave).padStart(2,"0")+" / 03";
+        $("wave-label").textContent=campaignMode?"WAVE "+String(wave).padStart(2,"0")+" / 03":"BODHI SHOWDOWN";
         const boss=enemies.find(e=>e.type==="boss"&&!e.dead);
         $("boss-hud").style.display=boss?"block":"none";
         if(boss)$("boss-bar").style.width=Math.max(0,boss.hp/boss.maxHp*100)+"%";
@@ -495,30 +517,42 @@
         $("wave-banner").style.opacity=bannerTimer>0?"1":"0";
         if(comboTimer>0){comboTimer-=dt;if(comboTimer<=0)combo=0;}
         const v=move();
+        p.blocking=keys.has("i")&&p.dashTime<=0;
         p.moving=!!(v.x||v.y);
+        if(keys.has("j")&&p.cooldown<=0)punch();
         if(p.dashTime>0){
           p.dashTime=Math.max(0,p.dashTime-dt);
           p.x+=p.dashX*760*dt;p.y+=p.dashY*500*dt;
           if(Math.random()<.7)burst(p.x-p.face*12,p.y-12,2,"#91e8ff",.3);
         }else{
-          p.x+=v.x*235*dt;p.y+=v.y*175*dt;
+          p.x+=v.x*235*dt*(p.blocking?.4:1);p.y+=v.y*175*dt*(p.blocking?.4:1);
           if(v.x)p.face=v.x>0?1:-1;
           if(v.x||v.y)p.walk+=dt*12;
         }
         p.x=clamp(p.x,30,930);p.y=clamp(p.y,327,510);
         for(const e of enemies){
           if(e.dead)continue;
+          if(p.dashTime>0&&!p.dashHits.includes(e.id)&&Math.abs(e.x-p.x)<70&&Math.abs(e.y-p.y)<48){p.dashHits.push(e.id);hit(e,24,12);}
+          if(e.dead)continue;
           e.flash=Math.max(0,e.flash-dt);e.cooldown=Math.max(0,e.cooldown-dt);
           e.attackAnim=Math.max(0,e.attackAnim-dt);e.stun=Math.max(0,e.stun-dt);
           e.moving=false;
           e.face=p.x>=e.x?1:-1;
-          if(e.stun>0)continue;
+          if(e.stun>0){e.rushTime=0;continue;}
+          if(e.type==="boss"&&e.hp<e.maxHp*.5&&!e.enraged){e.enraged=true;pop(e.x,e.y-165,"BODHI UNLEASHED!","#ff687f",true);ring(e.x,e.y-60,"#ff537e",160);}
+          if(e.rushTime>0){
+            e.rushTime=Math.max(0,e.rushTime-dt);e.attackAnim=e.rushTime;e.face=e.rushFace;e.moving=true;e.walk+=dt*18;
+            e.x=clamp(e.x+e.rushFace*570*dt,30,930);
+            if(!e.rushHit&&Math.abs(e.x-p.x)<80&&Math.abs(e.y-p.y)<48){hurt(e);e.rushHit=true;}
+            continue;
+          }
           const dx=p.x-e.x,dy=p.y-e.y,dist=Math.hypot(dx,dy*1.35);
           if(e.windup>0){
             e.windup-=dt;
             if(e.windup<=0){
               e.attackAnim=e.type==="boss"?.34:.2;
-              if(Math.abs(dx)<e.range+(e.attackKind==="kick"?45:20)&&Math.abs(dy)<48)hurt(e);
+              if(e.attackKind==="rush"){e.rushTime=.38;e.rushFace=e.face;e.rushHit=false;}
+              else if(Math.abs(dx)<e.range+20&&Math.abs(dy)<48)hurt(e);
               if(e.type==="boss"){ring(e.x,e.y-40,"#ff5b92",115);burst(e.x+e.face*45,e.y-45,14,"#fd6b9e",.7);}
               e.cooldown=e.type==="boss"?(e.hp<e.maxHp*.5?1.05:1.55):e.type==="heavy"?1.25:1.1;
             }
@@ -529,9 +563,9 @@
             e.moving=true;
             e.x+=dx/m*speed*dt;e.y+=dy/m*speed*.75*dt;e.walk+=dt*10;
           }else if(e.cooldown<=0){
-            e.attackIndex++;e.attackKind=e.type==="boss"&&e.attackIndex%2===0?"kick":"punch";
-            e.windup=e.type==="boss"?(e.attackKind==="kick"?.8:.58):.36;
-            if(e.type==="boss")pop(e.x,e.y-170,e.attackKind==="kick"?"KICK · DASH AWAY!":"PUNCH · DODGE!","#ff9ba8");
+            e.attackIndex++;e.attackKind=e.type==="boss"&&e.attackIndex%3===0?"rush":e.attackIndex%2===0?"heavy":"punch";
+            e.windup=e.type==="boss"?(e.attackKind==="rush"?.85:e.attackKind==="heavy"?.68:.46):.36;
+            if(e.type==="boss")pop(e.x,e.y-170,e.attackKind==="rush"?"RUSH · DASH AWAY!":e.attackKind==="heavy"?"HEAVY PUNCH!":"PUNCH · GUARD!","#ff9ba8");
           }
           e.x=clamp(e.x,30,930);e.y=clamp(e.y,326,510);
         }
@@ -597,7 +631,7 @@
         ctx.fillStyle=vign;ctx.fillRect(0,0,W,H);
       }
       function villainPose(a){
-        return a.dead?7:a.stun>0?6:a.attackAnim>0?(a.attackKind==="kick"?5:4):a.windup>0?3:a.moving?1+Math.floor(a.walk*1.2)%2:0;
+        return a.dead?5:a.stun>0?5:a.attackAnim>0?4:a.windup>0?(a.attackKind==="rush"?6:3):a.moving?1+Math.floor(a.walk*1.4)%2:Math.floor(clock*1.5)%2?3:0;
       }
       function drawActor(a,hero=false){
         const boss=a.type==="boss",heavy=a.type==="heavy";
@@ -606,7 +640,7 @@
         const attacking=(hero?a.punchTime:a.attackAnim)>0;
         ctx.save();ctx.translate(a.x,a.y);
         ctx.fillStyle="#070b16a0";ctx.beginPath();ctx.ellipse(0,2,boss?41:27,9,0,0,TAU);ctx.fill();
-        if(boss&&villainAvatar&&villainAvatar.complete&&villainAvatar.naturalWidth>0){
+        if(boss&&villainSheet&&villainFrames.length===8){
           if(a.windup>0){
             ctx.strokeStyle="#ff527a";ctx.lineWidth=3;ctx.globalAlpha=.5+.4*Math.sin(clock*30);
             ctx.beginPath();ctx.ellipse(0,0,69,14,0,0,TAU);ctx.stroke();ctx.globalAlpha=1;
@@ -617,13 +651,11 @@
           const bob=a.moving?Math.sin(a.walk*2)*1.5:Math.sin(clock*3)*.6;
           ctx.translate(a.attackAnim>0?a.face*8:0,bob);
           if(a.flash>0){ctx.shadowColor="#fff1d1";ctx.shadowBlur=22;}
-          if(a.dead)ctx.globalAlpha=Math.min(1,a.fallTime*2);
+          if(a.dead){ctx.globalAlpha=Math.min(1,a.fallTime*2);ctx.rotate(-a.face*Math.min(1,(.85-a.fallTime)/.35)*1.35);}
           if(frame){
             ctx.scale(a.face,1);
-            const height=a.dead?ACTOR_HEIGHT*.65:ACTOR_HEIGHT,width=frame.w/frame.h*height;
+            const height=ACTOR_HEIGHT*frame.h/villainFrames[0].h,width=frame.w/frame.h*height;
             ctx.drawImage(villainSheet,frame.x,frame.y,frame.w,frame.h,-width/2,-height,width,height);
-          }else{
-            ctx.scale(-a.face,1);ctx.drawImage(villainAvatar,-45,-ACTOR_HEIGHT,90,ACTOR_HEIGHT);
           }
           ctx.restore();
           if(!a.dead){
@@ -648,6 +680,7 @@
           ctx.globalAlpha=a.invuln>0&&Math.floor(clock*18)%2===0?.58:1;
           ctx.drawImage(heroSheet,col*192,row*208,192,208,-77,-164,154,166);
           ctx.globalAlpha=1;ctx.filter="none";
+          if(a.blocking){ctx.strokeStyle="#98eeff";ctx.lineWidth=4;ctx.beginPath();ctx.arc(a.face*24,-75,42,-1.4,1.4,a.face<0);ctx.stroke();}
           if(a.punchTime>0){
             const strength=a.punchTime/.22;
             ctx.strokeStyle="#ffe49a";ctx.lineWidth=8*strength;ctx.shadowBlur=22;ctx.shadowColor="#ffc35c";
@@ -765,14 +798,16 @@
         ctx.fillStyle="#080b17e8";ctx.fillRect(0,0,W,bars);ctx.fillRect(0,H-bars,W,bars);
       }
       function animate(now){
-        const dt=Math.min(.032,(now-last)/1000||.016);last=now;
-        update(dt);draw();requestAnimationFrame(animate);
+        // Keep combat at real-time speed on slower phones, with small collision steps.
+        let remaining=Math.min(.1,(now-last)/1000||.016);last=now;
+        while(remaining>0){const step=Math.min(.025,remaining);update(step);remaining-=step;}
+        draw();requestAnimationFrame(animate);
       }
       const normalize=(key)=>{
         const k=key.toLowerCase();
         return k===" "?"j":k==="shift"?"k":k==="e"?"l":k;
       };
-      const playable=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright","j","k","l","r","p","escape"]);
+      const playable=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright","j","k","i","l","r","p","escape"]);
       document.addEventListener("keydown",(event)=>{
         const k=normalize(event.key);
         if(!playable.has(k))return;
@@ -801,7 +836,8 @@
       });
       $("main-button").addEventListener("click",()=>mode==="paused"?pause():start());
       $("pause").addEventListener("click",()=>{if(mode==="playing"||mode==="paused")pause();});
-      $("restart").addEventListener("click",start);
+      $("restart").addEventListener("click",()=>start());
+      $("campaign").addEventListener("click",()=>start(true));
       $("cinema").textContent=cinematic?"Cinema On":"Cinema Off";
       $("cinema").setAttribute("aria-pressed",String(cinematic));
       $("cinema").addEventListener("click",()=>{
