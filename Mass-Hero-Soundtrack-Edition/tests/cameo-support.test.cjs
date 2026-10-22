@@ -76,19 +76,32 @@ test('Pragi windup allows an enemy to dodge before contact',()=>{
 test('expired and stopped helpers cannot keep dealing damage',()=>{
  const {support,context,hits}=fixture('pragi',[mob(1,300,420,5000)]);support.summon(context);support.update(10,context);const count=hits.length;support.update(10,context);assert.equal(hits.length,count);assert.equal(support.damage(context.enemies[0],10,context),false);support.resetWave(2);support.summon(context);support.stop();support.update(10,context);assert.equal(hits.length,count);
 });
-test('Mirna restores thirty health over ten seconds without attacking',()=>{
- const {support,context,hits,events}=fixture('mirna');context.player.hp=50;support.summon(context);support.update(.5,context);assert.equal(context.player.hp,53);
- support.update(9.5,context);assert.equal(context.player.hp,80);assert.equal(support.active,null);assert.equal(hits.length,0);assert.equal(events.filter(e=>e.kind==='care').length,10);
+test('Swetha heals thirty health and drains exactly five HP per second',()=>{
+ const {support,context,hits,events}=fixture('swetha',[mob(1,320,420,1000),mob(2,800,420,1000)]);context.player.hp=50;
+ support.summon(context);support.update(.5,context);assert.equal(context.player.hp,53);assert.equal(hits.length,0);
+ support.update(.5,context);assert.equal(context.enemies[0].hp,995);assert.equal(context.enemies[1].hp,1000);
+ support.update(9,context);assert.equal(context.player.hp,80);assert.equal(support.active,null);assert.equal(context.enemies[0].hp,950);assert.equal(events.filter(e=>e.kind==='care').length,10);
 });
-test('Mirna caps health, follows smoothly, and pause freezes care',()=>{
- const {support,context}=fixture('mirna');context.player.hp=99;support.summon(context);const x=support.active.helper.x;context.player.x=600;support.update(.25,context);
+test('Swetha caps health, follows smoothly, and pause freezes healing and drain',()=>{
+ const {support,context}=fixture('swetha');context.player.hp=99;support.summon(context);const x=support.active.helper.x;context.player.x=600;support.update(.25,context);
  assert(support.active.helper.x>x);assert(support.active.helper.x<520);assert(support.active.helper.moving);
  support.update(5,{...context,mode:'paused'});assert.equal(context.player.hp,99);assert.equal(support.active.elapsed,.25);
  support.update(.25,context);assert.equal(context.player.hp,100);support.update(9.5,context);assert.equal(context.player.hp,100);
 });
-test('Mirna protection lasts only during normal active waves',()=>{
- const {support,context}=fixture('mirna');assert.equal(support.damageMultiplier(context),1);support.summon(context);assert.equal(support.damageMultiplier(context),.75);
- for(const patch of [{phase:'boss'},{transition:true},{mode:'paused'},{enemies:[{...mob(1),type:'boss'}]}])assert.equal(support.damageMultiplier({...context,...patch}),1);
- context.player.hp=30;support.update(1,{...context,enemies:[{...mob(1),type:'boss'}]});assert.equal(context.player.hp,30);
- support.update(9,context);assert.equal(support.damageMultiplier(context),1);
+test('Swetha circle repels overlapping mobs and blocks their attacks',()=>{
+ const {support,context}=fixture('swetha',[mob(1,280,420),mob(2,290,425)]);support.summon(context);support.enforceBarrier(context);
+ for(const e of context.enemies){assert(Math.hypot(e.x-context.player.x,(e.y-context.player.y)*1.6)>=149.99);assert(support.blocksEnemy(e,context));assert.equal(e.windup,0);}
+ context.player.x=600;support.enforceBarrier(context);for(const e of context.enemies)assert(Math.hypot(e.x-600,(e.y-420)*1.6)>=149.99);
+});
+test('Swetha barrier stays valid at all arena corners',()=>{
+ for(const x of [30,930])for(const y of [327,510]){
+  const {support,context}=fixture('swetha',[mob(1,x,y)]);context.player.x=x;context.player.y=y;support.summon(context);support.enforceBarrier(context);
+  const enemy=context.enemies[0];assert(enemy.x>=30&&enemy.x<=930);assert(enemy.y>=326&&enemy.y<=510);assert(Math.hypot(enemy.x-x,(enemy.y-y)*1.6)>=149.99);
+ }
+});
+test('Swetha protection excludes bosses, transitions, pause and expired summons',()=>{
+ const {support,context}=fixture('swetha');assert.equal(support.hasProtection(context),false);support.summon(context);assert(support.hasProtection(context));
+ const boss={...mob(99),type:'boss'};assert.equal(support.blocksEnemy(boss,context),false);
+ for(const patch of [{phase:'boss'},{transition:true},{mode:'paused'},{enemies:[boss]}])assert.equal(support.hasProtection({...context,...patch}),false);
+ support.update(10,context);assert.equal(support.hasProtection(context),false);
 });

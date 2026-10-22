@@ -28,7 +28,7 @@
           else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
         }
       });
-      this.image.onload=()=>{try{this.decode();this.baseReady=true;this.ready=!!this.actionReady&&!!this.mirnaReady&&!this.error;this.paintCards();this.updateConfirm();}catch(error){this.fail();}};
+      this.image.onload=()=>{try{this.decode();this.baseReady=true;this.ready=!!this.actionReady&&!!this.swethaReady&&!this.error;this.paintCards();this.updateConfirm();}catch(error){this.fail();}};
       this.image.onerror=()=>this.fail();
       this.actionFrames=[];const actionArt=this.actionImage=new Image();
       actionArt.onload=()=>{
@@ -40,26 +40,26 @@
           for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(data[(y*w+x)*4+3]>80){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y);}
           this.actionFrames.push({canvas,x:left,y:top,w:right-left+1,h:bottom-top+1});
         }
-        this.actionReady=true;this.ready=!!this.baseReady&&!!this.mirnaReady&&!this.error;this.updateConfirm();
+        this.actionReady=true;this.ready=!!this.baseReady&&!!this.swethaReady&&!this.error;this.updateConfirm();
       };actionArt.onerror=()=>this.fail();
-      this.mirnaFrames=[];this.mirnaImage=new Image();
-      this.mirnaImage.onload=()=>{
+      this.swethaFrames=[];this.swethaImage=new Image();
+      this.swethaImage.onload=()=>{
         try{
-          this.mirnaFrames=[];
+          this.swethaFrames=[];
           for(let i=0;i<4;i++){
-            const [sx,sy,w,h]=[[0,0,700,645],[760,0,360,645],[90,646,490,656],[750,646,365,656]][i],canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
-            const context=canvas.getContext("2d");context.drawImage(this.mirnaImage,sx,sy,w,h,0,0,w,h);
+            const [sx,sy,w,h]=[i*this.swethaImage.width/4,0,this.swethaImage.width/4,this.swethaImage.height],canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
+            const context=canvas.getContext("2d");context.drawImage(this.swethaImage,sx,sy,w,h,0,0,w,h);
             const pixels=context.getImageData(0,0,w,h).data;let left=w,top=h,right=0,bottom=0;
             for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(pixels[(y*w+x)*4+3]>150){left=Math.min(left,x);top=Math.min(top,y);right=Math.max(right,x);bottom=Math.max(bottom,y);}
-            if(right-left<10||bottom-top<10)throw new Error("Missing Mirna artwork");
-            this.mirnaFrames.push({canvas,x:left,y:top,w:right-left+1,h:bottom-top+1});
+            if(right-left<10||bottom-top<10)throw new Error("Missing Swetha artwork");
+            this.swethaFrames.push({canvas,x:left,y:top,w:right-left+1,h:bottom-top+1});
           }
-          this.mirnaReady=true;this.ready=!!this.baseReady&&!!this.actionReady&&!this.error;this.paintCards();this.updateConfirm();
+          this.swethaReady=true;this.ready=!!this.baseReady&&!!this.actionReady&&!this.error;this.paintCards();this.updateConfirm();
         }catch(error){this.fail();}
-      };this.mirnaImage.onerror=()=>this.fail();this.load();
+      };this.swethaImage.onerror=()=>this.fail();this.load();
     }
     fail(){this.error=true;this.ready=false;this.updateConfirm();}
-    load(){this.error=false;this.ready=false;this.baseReady=false;this.actionReady=false;this.mirnaReady=false;this.updateConfirm();const version=Date.now();this.image.src="assets/cameo-roster.png?retry="+version;this.actionImage.src="assets/cameo-combat-actions.png?retry="+version;this.mirnaImage.src="assets/mirna-cameo.png?retry="+version;}
+    load(){this.error=false;this.ready=false;this.baseReady=false;this.actionReady=false;this.swethaReady=false;this.updateConfirm();const version=Date.now();this.image.src="assets/cameo-roster.png?retry="+version;this.actionImage.src="assets/cameo-combat-actions.png?retry="+version;this.swethaImage.src="assets/swetha-cameo.png?retry="+version;}
     decode(){
       // The reference-based atlas has extended rifles, command arms and a wide SUV.
       const regions=[[0,65,274,566],[270,65,241,566],[512,65,256,566],[770,65,254,566],[0,634,304,435],[275,675,235,394],[505,630,338,440],[733,704,291,366],[0,1080,266,420],[239,1080,245,420],[450,1080,286,420],[609,1200,415,270]];
@@ -92,10 +92,10 @@
     updateConfirm(){const selected=ROSTER.find(r=>r.id===this.choice);$("cameo-confirm").disabled=!this.error&&(!selected||!this.ready);$("cameo-confirm").textContent=this.error?"Retry cameo artwork":!this.ready?"Loading cameo artwork…":selected?"ENTER WITH "+selected.name.toUpperCase():"SELECT ONE CAMEO";$("cameo-selection-status").textContent=this.error?"Artwork could not load. Retry to continue.":selected?selected.name+" selected · "+selected.ability:"Choose one ally to join Thalaivar.";}
     open(){this.lastFocus=document.activeElement;this.choice=this.support.selected;this.cards.forEach((card,i)=>{const selected=card.dataset.cameo===this.choice;card.setAttribute("aria-checked",String(selected));card.tabIndex=selected||!this.choice&&i===0?0:-1;});$("cameo-picker").hidden=false;this.updateConfirm();(this.cards.find(card=>card.dataset.cameo===this.choice)||this.cards[0]).focus();}
     close(){ $("cameo-picker").hidden=true;if(this.lastFocus&&this.lastFocus.isConnected)this.lastFocus.focus({preventScroll:true}); }
-    paintCards(){this.cards.forEach((card,i)=>{const canvas=card.querySelector("canvas"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,220,270);if(ROSTER[i].id==="mirna")this.mirnaSprite(ctx,0,110,263,245,1);else this.sprite(ctx,i,110,263,245,1);});}
+    paintCards(){this.cards.forEach((card,i)=>{const canvas=card.querySelector("canvas"),ctx=canvas.getContext("2d");ctx.clearRect(0,0,220,270);if(ROSTER[i].id==="swetha")this.swethaSprite(ctx,0,110,263,245,1);else this.sprite(ctx,i,110,263,245,1);});}
     sprite(ctx,index,x,y,height,face=1){const frame=this.frames[index];if(!frame)return;const width=frame.w/frame.h*height;ctx.save();ctx.translate(x,y);ctx.scale(face,1);ctx.drawImage(frame.canvas,frame.x,frame.y,frame.w,frame.h,-width/2,-height,width,height);ctx.restore();}
-    mirnaSprite(ctx,index,x,y,height,face=1){
-      const frame=this.mirnaFrames[index];if(!frame)return;
+    swethaSprite(ctx,index,x,y,height,face=1){
+      const frame=this.swethaFrames[index];if(!frame)return;
       const width=frame.w/frame.h*height;ctx.save();ctx.translate(x,y);ctx.scale(face,1);ctx.drawImage(frame.canvas,frame.x,frame.y,frame.w,frame.h,-width/2,-height,width,height);ctx.restore();
     }
     actionSprite(ctx,index,x,y,height,face){
@@ -130,6 +130,16 @@
       const x=(sx-c.width/2)/zoom+centerX,y=(sy-c.height/2)/zoom+c.height/2;
       const target=this.support.targets(c).filter(e=>Math.abs(e.x-x)<48&&y>=e.y-130&&y<=e.y+12).sort((a,b)=>Math.abs(a.x-x)-Math.abs(b.x-x))[0];if(target)this.support.targetId=target.id;
     }
+    renderProtection(ctx,c,clock,cinematic){
+      if(!this.support.hasProtection(c)&&!(c.mode==="paused"&&this.support.hasProtection({...c,mode:"playing"})))return;
+      const time=cinematic?this.support.active.elapsed:0,x=c.player.x,y=c.player.y;
+      ctx.save();const glow=ctx.createRadialGradient(x,y,20,x,y,150);glow.addColorStop(0,"#ffe7a108");glow.addColorStop(.83,"#ffe7a115");glow.addColorStop(1,"#ffe7a155");ctx.fillStyle=glow;
+      ctx.beginPath();ctx.ellipse(x,y,150,150/1.6,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="#ffe09fcc";ctx.lineWidth=2.5;ctx.stroke();
+      ctx.setLineDash([6,11]);ctx.lineDashOffset=-time*18;ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(x,y,140,140/1.6,0,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+      for(let i=0;i<12;i++){const angle=i*Math.PI/6+time*.18,px=x+Math.cos(angle)*146,py=y+Math.sin(angle)*146/1.6;ctx.fillStyle="#fff0c1";ctx.beginPath();ctx.arc(px,py,2,0,Math.PI*2);ctx.fill();}
+      ctx.restore();
+    }
     render(ctx,c,clock,cinematic){
       const a=this.support.active;
       if(c.mode!=="playing"&&c.mode!=="paused")return;
@@ -154,12 +164,12 @@
         if(!this.actionSprite(ctx,g.recoil>0?9:8,g.x-g.face*g.recoil*24,g.y,138,g.face))this.sprite(ctx,2,g.x,g.y,138,g.face);
         a.agents.slice().sort((x,y)=>x.y-y.y).forEach(agent=>this.martialSprite(ctx,agent,a.agents.indexOf(agent)));
         if(g.recoil>0){ctx.fillStyle="#ffe1a1";ctx.beginPath();ctx.ellipse(g.x+g.face*54,g.y-85,8,3,0,0,Math.PI*2);ctx.fill();}
-      }else if(a.id==="mirna"){
-        const helper=a.helper,walking=helper.moving&&Math.sin(a.elapsed*9)>0,index=helper.helpTime>0?3:walking?2:1;
+      }else if(a.id==="swetha"){
+        const helper=a.helper,index=helper.helpTime>0?1:2+Math.floor(a.elapsed*2)%2;
         ctx.fillStyle="#080c1870";ctx.beginPath();ctx.ellipse(helper.x,helper.y+2,25,6,0,0,Math.PI*2);ctx.fill();
         const bob=helper.moving?Math.abs(Math.sin(a.elapsed*9))*2:Math.sin(a.elapsed*2)*.7;
-        this.mirnaSprite(ctx,index,helper.x,helper.y-bob,140,helper.face);
-        ctx.fillStyle="#f8cede";ctx.font="bold 10px system-ui";ctx.textAlign="center";ctx.fillText("MIRNA · GENTLE SUPPORT",helper.x,helper.y-151);ctx.textAlign="left";
+        this.swethaSprite(ctx,index,helper.x,helper.y-bob,145,helper.face);
+        ctx.fillStyle="#ffe0a0";ctx.font="bold 10px system-ui";ctx.textAlign="center";ctx.fillText("SWETHA · GUARDIAN CIRCLE",helper.x,helper.y-151);ctx.textAlign="left";
       }else if(a.id==="pragi"){
         this.martialSprite(ctx,a.fighter,-1);
       }

@@ -292,14 +292,18 @@
       }
       const cameoContext=()=>({mode,phase,transition:!!transition,enemies,player,width:W,height:H});
       const cameo=new MassHeroCameos.CameoSupport({
-        dealDamage:(enemy,amount)=>{if(cameo.active&&phase==="wave"&&MassHeroCameos.isMob(enemy))hit(enemy,amount,0,true);},
+        dealDamage:(enemy,amount,options)=>{
+          if(!cameo.active||phase!=="wave"||!MassHeroCameos.isMob(enemy))return;
+          if(options?.drain&&enemy.hp>amount){enemy.hp-=amount;enemy.flash=.08;pop(enemy.x,enemy.y-108,"-5","#ffe0a0");}
+          else hit(enemy,amount,0,true);
+        },
         emit:event=>{
           if(event.kind==="summon"){const ally=MassHeroCameos.ROSTER.find(r=>r.id===event.id);pop(event.x,event.y-170,ally.name.toUpperCase()+" · 10 SECOND ASSIST",ally.color,true);beep(430,.18,"triangle",.04);}
           if(event.kind==="sniper"){burst(event.x,event.y-55,15,"#ccff96",.8);beep(760,.12,"square",.025);}
           if(event.kind==="impact"){ring(event.x,event.y-30,"#ffc187",110);if(cinematic)shake=Math.max(shake,8);beep(85,.12,"sawtooth",.04);}
           if(event.kind==="melee"){burst(event.x,event.y,5,"#ffd4a2",.35);if(cinematic)shake=Math.max(shake,event.kick?3:1.5);beep(event.kick?95:130,.045,"triangle",.018);}
           if(event.kind==="rifle"){burst(event.x,event.y,2,"#ffe6a3",.2);beep(155,.035,"sawtooth",.012);}
-          if(event.kind==="care"&&event.healed>0){pop(player.x,player.y-155,"+"+event.healed+" HP · MIRNA","#ffcedf");beep(520,.09,"sine",.012);}
+          if(event.kind==="care"&&event.healed>0){pop(player.x,player.y-155,"+"+event.healed+" HP · SWETHA","#ffe0a0");beep(520,.09,"sine",.012);}
           if(event.kind==="expired"&&player)pop(player.x,player.y-150,"SUPPORT EXTRACTED","#c8ddf2");
         }
       });
@@ -599,14 +603,13 @@
         }
       }
       function hurt(e){
-        if(player.invuln>0||player.dashTime>0||mode!=="playing")return;
+        if(player.invuln>0||player.dashTime>0||mode!=="playing"||cameo.blocksEnemy(e,cameoContext()))return;
         if(keys.has("i")&&e.attackKind!=="rush"){
           player.invuln=.3;player.rage=clamp(player.rage+9,0,100);
           ring(player.x,player.y-65,"#8cf2ff",65);pop(player.x,player.y-155,"BLOCK!","#a4edff");beep(360,.08,"triangle");hud();return;
         }
         if(keys.has("i"))pop(player.x,player.y-155,"GUARD BROKEN!","#ff8d98",true);
-        const baseDamage=e.type==="boss"?LEVELS[e.bossId].damage:e.type==="heavy"?16+wave*2:11+wave*2;
-        const dmg=Math.ceil(baseDamage*cameo.damageMultiplier(cameoContext()));
+        const dmg=e.type==="boss"?LEVELS[e.bossId].damage:e.type==="heavy"?16+wave*2:11+wave*2;
         player.hp=Math.max(0,player.hp-dmg);player.invuln=.85;
         player.x=clamp(player.x+e.face*27,30,930);shake=12;flash=.11;combo=0;comboTimer=0;
         burst(player.x,player.y-54,16,"#ff6a7e");
@@ -754,6 +757,7 @@
           e.x=clamp(e.x,e.entering?-90:30,e.entering?W+90:930);e.y=clamp(e.y,326,510);
           if(e.x>=30&&e.x<=930)e.entering=false;
         }
+        cameo.enforceBarrier(cameoContext());
         enemies=enemies.filter(e=>!e.dead);
         if(enemies.length===0&&reinforcementQueue.length===0&&nextWave===0){
           if(cameo.active){bannerText="WAVE SECURED · SUPPORT ON STATION";bannerTimer=.3;hud();return;}
@@ -999,6 +1003,7 @@
         if(cinematic&&shake>0)ctx.translate(rand(-shake,shake),rand(-shake*.5,shake*.5));
         background();
         if(player){
+          cameoView.renderProtection(ctx,cameoContext(),clock,cinematic);
           if(player.dashTime>0){ctx.save();ctx.globalAlpha=.22;drawActor(Object.assign({},player,{x:player.x-player.face*42}),true);ctx.restore();}
           const lineup=[...fallen,...enemies,player].sort((a,b)=>a.y-b.y);
           for(const actor of lineup)drawActor(actor,actor===player);
