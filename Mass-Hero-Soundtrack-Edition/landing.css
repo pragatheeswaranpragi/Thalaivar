@@ -107,3 +107,11 @@ html {scroll-behavior:smooth}
   .landing-view .overlay::after {animation:none}
   .landing-view #main-button {transition:none}
 }
+
+/* The Three.js edition is the primary landing-page entry; 2D remains available. */
+.landing-view .stage {height:clamp(700px,80svh,880px)}
+.landing-view .cinema-entry {display:inline-block;background:linear-gradient(115deg,#f5d59a,#c89a51);border:1px solid #f7dfae;color:#1d160c;text-decoration:none;padding:18px 32px;min-width:254px;font-size:11px;letter-spacing:2px;font-weight:900;text-align:center;border-radius:2px;box-shadow:0 6px 35px #c99d4820}
+.landing-view .cinema-entry:hover,.landing-view .cinema-entry:focus-visible {background:#ffe5b5;box-shadow:0 6px 40px #c99d4844}
+.landing-view #main-button {margin-top:11px;min-width:254px;background:#151615b8;border:1px solid #bc9b5a66;color:#dac49e;padding:12px 24px;box-shadow:none;font-size:9px}
+@media(max-width:720px){.landing-view .stage{height:810px}.landing-view .cinema-entry{padding:16px 25px;min-width:248px;font-size:10px}.landing-view #main-button{min-width:248px;padding:11px 20px;font-size:9px}}
+@media(orientation:landscape) and (max-height:570px) and (pointer:coarse){.landing-view .stage{height:625px}}

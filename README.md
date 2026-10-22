@@ -10,7 +10,7 @@ Serve the game with the included media-aware development server (byte-range requ
 python3 Mass-Hero-Soundtrack-Edition/serve.py --port 8000
 ```
 
-Choose **Start 3-level campaign**, then select exactly one cameo before entering the continuous run:
+Choose **Enter 3D Cinema** for the Three.js edition, or **Play Original 2D** for the established Canvas game. Select exactly one cameo before starting the campaign:
 
 1. **Dockyard wave → The Enforcer** — 12 street enemies arriving in groups, then the bearded fighter with running and heavy punches.
 2. **Mill wave → Kalpak Brother** — 18 enemies arriving in groups, then the moustached fighter with rush attacks and a defensive guard. Dash attacks bypass his guard.
@@ -21,6 +21,21 @@ Only 6/7/8 mobs can be active at once in waves 1/2/3, and at most two normal ene
 The first boss now returns directly to the continuous wave-two transition; the dance interlude has been removed.
 
 Each boss has distinct reference-based action sprites. Waves, bosses, and levels advance automatically, with no menus or Next Level buttons between fights. In-arena titles, boss entrance zooms, letterboxing, impact pauses, knockout slow motion, and dash/rush trails connect the action while the music continues. Movement remains active during transitions. Defeat a boss to gain 30 health and carry your energy and score into the next wave. A defeat lets you retry the current wave or boss with full health and the score earned before that phase. **Restart** resets the campaign. **Quick duel: Bodhi Kalpak** retains the direct final-boss fight. Character animations must load before the fight starts; a failed download offers a retry instead of silently displaying a static character.
+
+## Three.js cinema edition
+
+`cinema.html` is a separate playable 3D edition. The original 2D game remains available from the home page and the 3D header. Both use the same static server and Vercel configuration, with no build step or external runtime CDN.
+
+- An actual Three.js/WebGL scene: articulated 3D fighters, a dockyard environment, perspective cameras, dynamic shadows, PBR materials, wet-ground highlights, rain, particles and optional bloom.
+- The continuous 12/18/24-mob campaign and three distinct bosses, telegraphed punches and rushes, guard, dash, combos, checkpoint retries and a full-energy 3D rocket finisher.
+- All five selectable cameos. Narasimha hits three targets per shot; Mathew drives a 3D SUV; Hrithik fires with three fighters; Pragathees performs melee attacks; Swetha provides her 10-second circle, 25 HP/s drain and 6 HP/s healing. Boss phases lock cameos.
+- Intro, boss reveal, finisher and victory camera sequences, skip and pause controls, keyboard and multi-touch input, reduced-motion framing, and High/Balanced rendering options. WebGL failure offers the 2D edition.
+
+**Character-art status:** this edition uses original procedural placeholder rigs, as requested. They are stylized temporary characters, not photorealistic likenesses or film-quality motion capture. Camera direction and combat are implemented in 3D; final human fidelity will require production character models and animation clips.
+
+**Preview a replacement hero:** Settings → Preview your hero model accepts a self-contained, uncompressed `.glb` up to 40 MB. The loader scales it to the arena and maps named Idle/Stand, Run/Walk, Punch/Attack, Block/Guard and Death/Die clips. A model without animation clips can move around the arena but will not gain skeletal animation. The preview lasts for the current page session. FBX conversion, Draco-compressed models and externally referenced textures are not supported by this preview input.
+
+Three.js **0.180.0** is vendored in `vendor/three`, downloaded from npm and checked against its SHA-512 integrity metadata. Its MIT license and source/version information are retained there.
 
 ## Cameo support
 
@@ -65,5 +80,5 @@ Pushing to GitHub updates the source. A live Vercel update still requires a succ
 ## Combat-rule tests
 
 ```sh
-node --test Mass-Hero-Soundtrack-Edition/tests/*.test.cjs
+node --test Mass-Hero-Soundtrack-Edition/tests/*.test.cjs Mass-Hero-Soundtrack-Edition/tests/*.test.mjs
 ```

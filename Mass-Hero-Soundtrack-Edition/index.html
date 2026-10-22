@@ -219,7 +219,7 @@
           <span class="landing-slogan landing-only">Tiger ka Hukum</span>
           <p id="overlay-message">One man. An empire of enemies. Step into Thalaivar’s world and make the city remember his name.</p>
           <div class="chips"><span><b>03</b> RELENTLESS WAVES</span><span><b>03</b> BOSS SHOWDOWNS</span><span><b>05</b> CAMEO ALLIES</span></div>
-          <button id="main-button" disabled>PREPARING THE ARENA…</button><button id="campaign">Challenge Bodhi Kalpak ↗</button><span class="hint">FREE TO PLAY <i>·</i> KEYBOARD & TOUCH <i>·</i> NO DOWNLOAD</span><span class="poster-credit landing-only">THE CITY HAS RULES.<br><strong>HE IS THE EXCEPTION.</strong></span>
+          <a href="cinema.html" class="cinema-entry landing-only">ENTER 3D CINEMA →</a><button id="main-button" disabled>PREPARING THE 2D ARENA…</button><button id="campaign">Challenge Bodhi Kalpak ↗</button><span class="hint">FREE TO PLAY <i>·</i> KEYBOARD & TOUCH <i>·</i> NO DOWNLOAD</span><span class="poster-credit landing-only">THE CITY HAS RULES.<br><strong>HE IS THE EXCEPTION.</strong></span>
         </div>
       </section>
       <div class="cameo-strip" id="cameo-strip" aria-label="Cameo support">
@@ -351,7 +351,7 @@
       function finishSpriteLoad(){
         if(!spriteLoads.bodhi||!spriteLoads.campaign)return;
         spriteStatus="ready";
-        if(mode==="menu"){$("main-button").disabled=false;$("main-button").textContent="ENTER THE ARENA →";}
+        if(mode==="menu"){$("main-button").disabled=false;$("main-button").textContent="PLAY ORIGINAL 2D →";}
       }
       function spriteFailure(){spriteStatus="error";$("main-button").disabled=false;$("main-button").textContent="RETRY CHARACTER DOWNLOAD";}
       if(villainSheet&&campaignSheet){
