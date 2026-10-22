@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0d1222">
-  <meta name="description" content="Mass Hero: Neon Reckoning. A playable 2D arcade brawler with three waves, combos, dash attacks and a final boss.">
-  <title>Mass Hero — Neon Reckoning</title>
+  <meta name="theme-color" content="#0b0b0c">
+  <meta name="description" content="Jailer — Tiger ka Hukum. Enter a cinematic arcade campaign as Thalaivar. Three enemy waves, three bosses, five cameos. One unstoppable legend.">
+  <title>Jailer — Tiger ka Hukum</title>
   <style>
     :root {font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:#f6f3fc;background:#090c16}
     * {box-sizing:border-box}
@@ -189,16 +189,17 @@
     .ending-mode .stage {width:min(100%,calc((100dvh - 170px)*16/9))}
     @media(orientation:landscape) and (max-height:570px) and (pointer:coarse){.ending-mode .stage {width:100%;height:100%}}
   </style>
+  <link rel="stylesheet" href="landing.css">
 </head>
 <body>
-  <div class="app" id="app">
+  <div class="app landing-view" id="app">
     <header class="header">
-      <div class="brand"><div class="brand-mark">M<span>H</span></div><div><h1>MASS HERO</h1><p>NEON RECKONING · CONTINUOUS CAMPAIGN</p></div></div>
-      <div class="header-right"><span class="status">SINGLE PLAYER</span><button id="fullscreen" aria-label="Toggle fullscreen">⛶ Fullscreen</button></div>
+      <div class="brand"><div class="brand-mark" aria-hidden="true">J</div><div><h1>JAILER</h1><p>TIGER KA HUKUM</p></div></div>
+      <nav class="landing-nav landing-only" aria-label="Explore Jailer"><a href="#mission-brief">The mission</a><a href="#allies-preview">Your allies</a></nav><div class="header-right"><span class="status">SINGLE PLAYER</span><button id="fullscreen" aria-label="Toggle fullscreen">⛶ Fullscreen</button></div>
     </header>
     <main class="play-area">
-      <section class="stage" id="stage" tabindex="0" aria-label="Mass Hero game arena">
-        <canvas id="game" width="960" height="540">Your browser needs Canvas support to play Mass Hero.</canvas>
+      <section class="stage" id="stage" tabindex="0" aria-label="Jailer game arena">
+        <canvas id="game" width="960" height="540">Your browser needs Canvas support to play Jailer.</canvas>
         <div class="hud">
           <div class="hero-hud">
             <div class="bar-label"><span>THALAIVAR <b>★</b></span><span id="health-text">100 / 100</span></div>
@@ -213,11 +214,12 @@
         <div id="flash"></div>
         <div class="ending-controls" id="ending-controls" hidden><button id="ending-audio" hidden>Play ending music</button><button id="ending-silent" hidden>Continue muted</button><button id="ending-skip">Skip cinematic →</button></div>
         <div class="overlay" id="overlay">
-          <span class="eyebrow" id="eyebrow">A ONE-HERO ARCADE EXPERIENCE</span>
-          <h2 id="overlay-title">THE CITY<br><em>NEEDS A HERO.</em></h2>
-          <p id="overlay-message">Wave one. The Enforcer. Wave two. Kalpak Brother. Final wave. Bodhi Kalpak. One continuous fight.</p>
-          <div class="chips"><span>3 WAVES + 3 BOSSES</span><span>SEAMLESS COMBAT</span><span>ROCKET FATALITY</span></div>
-          <button id="main-button" disabled>LOADING FIGHT ANIMATIONS…</button><button id="campaign" style="background:transparent;color:#ffe3aa;border:1px solid #9b8ba175;padding:7px 15px;border-radius:4px;font-size:11px">Quick duel: Bodhi Kalpak</button><span class="hint">MOVE · FIGHT · CHARGE · CONQUER</span>
+          <span class="eyebrow" id="eyebrow">A THALAIVAR ARCADE EXPERIENCE</span>
+          <h2 id="overlay-title">JAILER</h2>
+          <span class="landing-slogan landing-only">Tiger ka Hukum</span>
+          <p id="overlay-message">One man. An empire of enemies. Step into Thalaivar’s world and make the city remember his name.</p>
+          <div class="chips"><span><b>03</b> RELENTLESS WAVES</span><span><b>03</b> BOSS SHOWDOWNS</span><span><b>05</b> CAMEO ALLIES</span></div>
+          <button id="main-button" disabled>PREPARING THE ARENA…</button><button id="campaign">Challenge Bodhi Kalpak ↗</button><span class="hint">FREE TO PLAY <i>·</i> KEYBOARD & TOUCH <i>·</i> NO DOWNLOAD</span><span class="poster-credit landing-only">THE CITY HAS RULES.<br><strong>HE IS THE EXCEPTION.</strong></span>
         </div>
       </section>
       <div class="cameo-strip" id="cameo-strip" aria-label="Cameo support">
@@ -238,6 +240,12 @@
         </div>
       </div>
     </main>
+    <section class="landing-features landing-only" id="mission-brief" aria-label="Your mission">
+      <article class="mission-intro"><span class="section-kicker">THE LEGEND RETURNS</span><h2>Respect is earned.<br><em>Fear is inevitable.</em></h2><p>From the dockyard to the final reckoning. The fight never stops.</p></article>
+      <article class="mission-card"><span class="feature-number">01 / THE CAMPAIGN</span><h3>One continuous hunt.</h3><p>Fight through 54 enemies and face The Enforcer, Kalpak Brother and Bodhi Kalpak. No breaks between battles.</p><span class="feature-detail">THREE ARENAS. ONE LEGEND.</span></article>
+      <article class="mission-card" id="allies-preview"><span class="feature-number">02 / YOUR ALLIES</span><h3>Power in your corner.</h3><p>Choose Narasimha, Mathew, Hrithik, Pragathees or Swetha. Call your cameo when the streets turn against you.</p><span class="feature-detail">FIVE ALLIES. YOUR CHOICE.</span></article>
+      <article class="mission-card"><span class="feature-number">03 / THE FINISHER</span><h3>Make an entrance.<br>Leave a statement.</h3><p>Build your energy. Put the glasses on. Let the rocket do the talking.</p><span class="feature-detail">FULL ENERGY. TOTAL RECKONING.</span></article>
+    </section>
     <div class="toolbar">
       <div class="controls-text"><span><kbd>WASD</kbd> Move</span><span><kbd>J</kbd> Hold to combo</span><span><kbd>C</kbd> Cameo</span><span><kbd>I</kbd> Hold guard</span><span><kbd>K</kbd> Dash</span><span><kbd>L</kbd> Fatality · 100% energy</span><span><kbd>↓ → ↓ → R</kbd> Rocket finisher · 100% energy</span></div>
       <div class="toolbar-actions">
@@ -245,7 +253,7 @@
         <button id="cinema" aria-pressed="true">Cinema On</button><button id="sound">♪ Effects On</button><button id="pause">Ⅱ Pause</button><button id="restart">↻ Restart</button>
       </div>
     </div>
-    <footer class="footer"><span>★ CONTINUOUS CAMPAIGN · WAVE → BOSS → NEXT WAVE</span><span><a href="https://pragatheeswaran.vercel.app/" target="_blank" rel="noopener noreferrer">Developed By Pragatheeswaran Kasinathan</a></span></footer>
+    <footer class="footer"><span>JAILER · TIGER KA HUKUM</span><span><a href="https://pragatheeswaran.vercel.app/" target="_blank" rel="noopener noreferrer">Developed By Pragatheeswaran Kasinathan</a></span></footer>
   <section class="cameo-picker" id="cameo-picker" hidden role="dialog" aria-modal="true" aria-labelledby="cameo-picker-title">
     <div class="cameo-dialog"><span class="eyebrow">THALAIVAR DOESN’T FIGHT ALONE</span><h2 id="cameo-picker-title">CHOOSE YOUR CAMEO</h2><p>Choose exactly one ally. Each summon lasts 10 seconds, once per normal wave. Cameos cannot be used in boss fights.</p><div class="cameo-cards" id="cameo-cards" role="radiogroup" aria-label="Cameo character"></div><div class="cameo-actions"><p id="cameo-selection-status" aria-live="polite">Choose one ally to join Thalaivar.</p><button id="cameo-cancel">Back</button><button id="cameo-confirm" disabled>SELECT ONE CAMEO</button></div></div>
   </section>
@@ -343,7 +351,7 @@
       function finishSpriteLoad(){
         if(!spriteLoads.bodhi||!spriteLoads.campaign)return;
         spriteStatus="ready";
-        if(mode==="menu"){$("main-button").disabled=false;$("main-button").textContent="▶ START 3-LEVEL CAMPAIGN";}
+        if(mode==="menu"){$("main-button").disabled=false;$("main-button").textContent="ENTER THE ARENA →";}
       }
       function spriteFailure(){spriteStatus="error";$("main-button").disabled=false;$("main-button").textContent="RETRY CHARACTER DOWNLOAD";}
       if(villainSheet&&campaignSheet){
@@ -491,7 +499,7 @@
         keys.clear();finisher=null;comboInput=[];fallen=[];victoryDelay=0;transition=null;entranceTimer=0;phase="wave";hitPause=0;slowMotion=0;impactTime=0;cameraZoom=1;
         player={x:280,y:421,hp:100,rage:0,face:1,cooldown:0,punchTime:0,dashTime:0,dashCooldown:0,dashX:1,dashY:0,invuln:0,specialTime:0,celebrateTime:0,moving:false,blocking:false,dashHits:[],walk:0};
         enemies=[];reinforcementQueue=[];reinforcementTimer=0;particles=[];rings=[];floaters=[];
-        score=resumeScore;wave=campaignMode?resumeWave:2;combo=0;comboTimer=0;nextWave=0;shake=0;flash=0;clock=0;mode="playing";
+        score=resumeScore;wave=campaignMode?resumeWave:2;combo=0;comboTimer=0;nextWave=0;shake=0;flash=0;clock=0;mode="playing";$("app").classList.remove("landing-view");
         $("overlay").classList.add("hidden");$("campaign").hidden=true;$("pause").textContent="Ⅱ Pause";
         if(campaignMode){if(retry&&resumePhase==="boss"){wave++;spawnBoss();}else spawnWave();}else{wave=3;spawnBoss();}
         $("stage").focus({preventScroll:true});

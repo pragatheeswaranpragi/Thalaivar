@@ -1,0 +1,109 @@
+/* Jailer visual identity and responsive title screen. */
+:root {color-scheme:dark;--jailer-gold:#e8bc76;--jailer-ink:#0b0b0c}
+html {scroll-behavior:smooth}
+.app {background:radial-gradient(ellipse at 80% 0%,#252015,#0b0b0c 62%)}
+.header {height:84px;border-bottom:1px solid #c69a5224;background:#0b0b0ce8;padding-inline:clamp(20px,4vw,64px)}
+.brand {gap:16px}
+.brand-mark {width:43px;height:49px;transform:none;border:1px solid #d4a96880;background:linear-gradient(140deg,#f2d49a,#9f7434);color:#16120c;box-shadow:inset 0 0 0 4px #16120c;font-family:Georgia,serif;font-size:33px;font-weight:900}
+.brand h1 {font-family:Georgia,serif;font-size:25px;letter-spacing:5px;color:#f1dcac}
+.brand p {color:#a6987f;font-size:8px;letter-spacing:3px;margin-top:8px}
+.header button,.toolbar button {background:#191817;border-color:#484034;color:#d9d0be;border-radius:3px}
+.header button:hover,.toolbar button:hover {background:#32291e;border-color:#b89b68}
+.status {font-size:9px;letter-spacing:2px;color:#a69b87}
+.status::before {width:5px;height:5px;background:#e8bc76;box-shadow:0 0 10px #e8bc7655}
+.landing-only {display:none}
+.landing-view .landing-only {display:block}
+.landing-view .landing-nav {display:flex;gap:34px;margin-left:auto;margin-right:55px}
+.landing-nav a {color:#bcb5a5;text-decoration:none;font-size:11px;letter-spacing:1px;padding:12px 0}
+.landing-nav a:hover,.landing-nav a:focus-visible {color:#f2ce8e}
+.landing-view .play-area {display:block;flex:0 auto;padding:0}
+.landing-view .stage {width:100%;max-width:none;aspect-ratio:auto;height:clamp(640px,75svh,860px);border:0;border-bottom:1px solid #bf94513b;box-shadow:none}
+.landing-view #game,.landing-view .hud,.landing-view .boss-hud,.landing-view #wave-banner,.landing-view #combo {visibility:hidden}
+.landing-view .cameo-strip,.landing-view .touch,.landing-view .toolbar {display:none}
+.landing-view .overlay {align-items:flex-start;text-align:left;padding:55px clamp(24px,6vw,100px);gap:0;background:#0b0b0c;isolation:isolate}
+.landing-view .overlay::before {inset:0;opacity:1;background:linear-gradient(90deg,#0b0b0c 0%,#0b0b0cdd 28%,#0b0b0c11 66%),linear-gradient(0deg,#0b0b0c 0%,transparent 32%),url("assets/jailer-key-art.png") 65% 35%/cover no-repeat;mask-image:none;-webkit-mask-image:none}
+.landing-view .overlay::after {content:"";position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.45;background-image:radial-gradient(1px 1px at 57% 70%,#ffb954 70%,transparent),radial-gradient(2px 2px at 72% 40%,#ffd192 70%,transparent),radial-gradient(1px 1px at 88% 80%,#ffd192 70%,transparent),radial-gradient(1px 1px at 44% 90%,#ffb954 70%,transparent);background-size:350px 330px;animation:drifting-embers 22s linear infinite}
+.landing-view #eyebrow {font-size:10px;letter-spacing:4px;color:#c9b591;margin:12px 0 29px;display:flex;align-items:center;gap:14px}
+.landing-view #eyebrow::before {content:"";width:28px;height:1px;background:#d2a461}
+.landing-view #overlay-title {font-family:Impact,"Arial Narrow",sans-serif;font-style:normal;font-size:clamp(105px,13.2vw,194px);font-weight:950;line-height:.9;letter-spacing:-.055em;margin:0 0 13px -7px;background:linear-gradient(165deg,#fff3c9 3%,#e9c889 38%,#bc8943 74%,#f3dba6);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 4px 24px #0009)}
+.landing-slogan {font-family:Georgia,serif;font-style:italic;color:#ead8b6;font-size:clamp(25px,3vw,41px);letter-spacing:1px;margin:0 0 24px}
+.landing-view #overlay-message {max-width:365px;color:#bcb6a9;font-size:14px;line-height:1.8;margin:0 0 25px}
+.landing-view .chips {gap:0;margin-bottom:32px}
+.landing-view .chips span {padding:0 20px;color:#aa9c83;border:0;border-right:1px solid #aa9c8340;font-size:8px;letter-spacing:1px;font-weight:650;white-space:nowrap}
+.landing-view .chips span:first-child {padding-left:0}
+.landing-view .chips span:last-child {border-right:0}
+.landing-view .chips b {display:block;color:#e5d4b0;font-size:20px;font-weight:500;letter-spacing:1px;margin-bottom:7px}
+.landing-view #main-button {background:linear-gradient(115deg,#f5d59a,#c89a51);color:#1d160c;border:1px solid #f7dfae;border-radius:2px;padding:18px 32px;min-width:254px;font-size:11px;letter-spacing:2px;box-shadow:0 6px 35px #c99d481c;transition:background .2s,box-shadow .2s,transform .2s}
+.landing-view #main-button:hover:not(:disabled) {background:#ffe5b5;box-shadow:0 6px 40px #c99d4844;transform:translateY(-2px)}
+.landing-view #main-button:disabled {cursor:wait;opacity:.65}
+#campaign {background:transparent;color:#c8b697;border:1px solid #8d75554d;padding:9px 16px;border-radius:2px;font-size:11px}
+.landing-view #campaign {border:0;border-bottom:1px solid #9d835444;border-radius:0;margin-top:13px;padding:6px 0;color:#b8ab92;font-size:10px;letter-spacing:.4px}
+.landing-view #campaign:hover {color:#ffe0a0}
+.landing-view .hint {display:block;color:#746c5d;font-size:8px;letter-spacing:1.2px;margin-top:24px}
+.hint i {font-style:normal;margin:0 8px}
+.landing-view .poster-credit {position:absolute;right:6%;bottom:55px;font-size:9px;line-height:1.8;letter-spacing:3px;color:#b0a28b;text-align:right}
+.poster-credit strong {color:#e3c89d;font-size:12px;letter-spacing:2px;font-weight:600}
+.landing-view .landing-features {display:grid;grid-template-columns:1.2fr repeat(3,1fr);max-width:1550px;width:100%;margin:0 auto;padding:48px clamp(24px,4vw,64px) 50px;gap:28px;background:linear-gradient(180deg,#11100e,#0b0b0c)}
+.landing-features article {min-width:0}
+.section-kicker,.feature-number {font-size:8px;color:#b5965e;letter-spacing:2px;font-weight:750}
+.mission-intro h2 {font-family:Georgia,serif;font-weight:500;font-size:25px;line-height:1.3;letter-spacing:-.5px;margin:13px 0 10px;color:#e1d7c3}
+.mission-intro h2 em {color:#ae956c;font-style:italic}
+.landing-features p {color:#857f73;font-size:11px;line-height:1.8;margin:12px 0}
+.mission-card {border-left:1px solid #a78a5933;padding-left:28px;scroll-margin:25px}
+.mission-card h3 {font-family:Georgia,serif;color:#ded3bd;font-size:19px;font-weight:500;line-height:1.3;margin:14px 0 12px}
+.feature-detail {display:block;color:#a59475;font-size:7px;letter-spacing:1.1px;margin-top:18px}
+.footer {background:#0b0b0c;color:#8e826c;border-top:1px solid #b38b4928;line-height:1.7;letter-spacing:1px;padding:20px clamp(20px,4vw,64px)}
+.footer span:first-child {color:#b6a07a}
+.cameo-picker {background:radial-gradient(ellipse at 30% 15%,#2b2418f7,#090a0cf9 75%)}
+.cameo-dialog {background:#121210;border-color:#51452f}
+.cameo-card {background:radial-gradient(ellipse at 50% 28%,#34312b,#1a1a18 70%);border-color:#3e3a30}
+.cameo-strip {background:#111211;border-color:#3d3b32}
+@keyframes drifting-embers {from {background-position:0 330px}to {background-position:35px 0}}
+@media (max-width:1000px) {
+  .landing-view .landing-nav {margin-right:20px;gap:20px}
+  .landing-view .landing-features {grid-template-columns:repeat(2,1fr);gap:28px}
+  .mission-card {padding-left:20px}
+  .landing-view .poster-credit {right:4%;font-size:8px;letter-spacing:1.5px}
+}
+@media (max-width:720px) {
+  .header {height:74px;padding:15px 20px}
+  .brand-mark {width:34px;height:40px;font-size:27px}
+  .brand {gap:12px}
+  .brand h1 {font-size:20px;letter-spacing:4px}
+  .brand p {font-size:7px;letter-spacing:2px;margin-top:6px}
+  .landing-view .landing-nav {display:none}
+  .landing-view .stage {height:760px;min-height:0}
+  .landing-view .overlay {padding:310px 25px 30px;justify-content:flex-start}
+  .landing-view .overlay::before {background:linear-gradient(0deg,#0b0b0c 43%,#0b0b0c22 83%),url("assets/jailer-key-art.png") 77% 0/auto 490px no-repeat}
+  .landing-view #eyebrow {font-size:8px;letter-spacing:2px;margin:0 0 15px}
+  .landing-view #overlay-title {font-size:clamp(76px,25vw,98px);margin-left:-4px;margin-bottom:10px}
+  .landing-slogan {font-size:27px;margin-bottom:17px}
+  .landing-view #overlay-message {font-size:12px;line-height:1.7;margin-bottom:20px;max-width:320px}
+  .landing-view .chips {margin-bottom:24px}
+  .landing-view .chips span {padding:0 13px;font-size:7px;letter-spacing:.6px}
+  .landing-view .chips b {font-size:17px;margin-bottom:5px}
+  .landing-view #main-button {padding:16px 25px;min-width:248px;font-size:10px}
+  .landing-view .hint {margin-top:17px;font-size:7px;letter-spacing:.7px}
+  .landing-view .poster-credit {display:none}
+  .landing-view .landing-features {padding:35px 25px;gap:26px}
+  .mission-intro {grid-column:1/-1}
+  .landing-features .mission-card {padding:22px 0 0;border-left:0;border-top:1px solid #a78a5933;grid-column:1/-1}
+  .landing-view .footer {display:flex;flex-direction:column;gap:8px;padding:22px 25px;font-size:8px}
+}
+@media (orientation:landscape) and (max-height:570px) and (pointer:coarse) {
+  .landing-view {height:auto;overflow:visible}
+  .landing-view .header {display:flex;height:62px}
+  .landing-view .play-area {height:auto}
+  .landing-view .stage {height:580px}
+  .landing-view .overlay {padding:32px 40px}
+  .landing-view #overlay-title {font-size:112px}
+  .landing-view #eyebrow {margin-top:0;margin-bottom:20px}
+  .landing-view .overlay::before {background:linear-gradient(90deg,#0b0b0c 0%,#0b0b0cdd 32%,#0b0b0c22 74%),url("assets/jailer-key-art.png") 70% 30%/cover no-repeat}
+  .landing-view .poster-credit {display:none}
+  .landing-view .footer {display:flex}
+}
+@media (prefers-reduced-motion:reduce) {
+  html {scroll-behavior:auto}
+  .landing-view .overlay::after {animation:none}
+  .landing-view #main-button {transition:none}
+}

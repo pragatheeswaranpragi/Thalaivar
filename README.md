@@ -1,6 +1,6 @@
-# Mass Hero: Neon Reckoning — Three Boss Campaign
+# Jailer — Tiger ka Hukum
 
-A browser arcade brawler starring Thalaivar against Bodhi Kalpak.
+A cinematic browser arcade brawler starring Thalaivar against Bodhi Kalpak. The opening page features Jailer key art, the Tiger ka Hukum slogan, a campaign overview and a five-cameo roster. Entering the arena switches to the compact gameplay layout.
 
 ## Play
 
