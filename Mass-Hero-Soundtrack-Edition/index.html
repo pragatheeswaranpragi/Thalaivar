@@ -154,7 +154,7 @@
           <div class="score-hud"><span id="wave-label">WAVE 01 / 03</span><strong id="score">000000</strong><small>TOTAL SCORE</small></div>
         </div>
         <div id="combo" aria-live="off"></div><div id="wave-banner"></div>
-        <div class="boss-hud" id="boss-hud"><div><strong>IRON KING</strong><span>FINAL BOSS</span></div><div class="meter"><div id="boss-bar"></div></div></div>
+        <div class="boss-hud" id="boss-hud"><div><strong>BODHI</strong><span>FINAL BOSS</span></div><div class="meter"><div id="boss-bar"></div></div></div>
         <div id="flash"></div>
         <div class="overlay" id="overlay">
           <span class="eyebrow" id="eyebrow">A ONE-HERO ARCADE EXPERIENCE</span>
@@ -174,12 +174,12 @@
         <div class="actions">
           <button data-control="k" class="dash">DASH</button>
           <button data-control="j" class="punch">PUNCH</button>
-          <button data-control="l" class="special">★<small>SPECIAL</small></button>
+          <button data-control="l" class="special">★<small>FATALITY</small></button>
         </div>
       </div>
     </main>
     <div class="toolbar">
-      <div class="controls-text"><span><kbd>WASD</kbd> Move</span><span><kbd>J</kbd> Punch</span><span><kbd>K</kbd> Dash</span><span><kbd>L</kbd> Special</span><span><kbd>↓ → ↓ → R</kbd> Rocket finisher · 100% energy</span></div>
+      <div class="controls-text"><span><kbd>WASD</kbd> Move</span><span><kbd>J</kbd> Punch</span><span><kbd>K</kbd> Dash</span><span><kbd>L</kbd> Fatality · 100% energy</span><span><kbd>↓ → ↓ → R</kbd> Rocket finisher · 100% energy</span></div>
       <div class="toolbar-actions">
         <button id="music" aria-label="Toggle background music">♫ BGM On</button>
         <button id="sound">♪ Effects On</button><button id="pause">Ⅱ Pause</button><button id="restart">↻ Restart</button>
@@ -208,6 +208,8 @@
       let finisher = null, comboInput = [];
       const heroSheet = typeof Image === "function" ? new Image() : null;
       if (heroSheet) heroSheet.src = "assets/thalaivar-spritesheet.png";
+      const villainAvatar = typeof Image === "function" ? new Image() : null;
+      if(villainAvatar) villainAvatar.src="assets/bodhi-villain.svg";
       const skyline = Array.from({length:28}, (_, i) => ({x:i*37-16,w:33+(i*13%29),h:75+(i*43%105),seed:i*37}));
       const backline = Array.from({length:19}, (_, i) => ({x:i*58-24,w:48+(i*9%24),h:110+(i*31%115)}));
       const stars = Array.from({length:45}, () => ({x:rand(0,W),y:rand(10,245),r:rand(.5,1.5),phase:rand(0,TAU)}));
@@ -283,7 +285,7 @@
           bannerText="WAVE TWO · NO MERCY";
         } else {
           enemies=[enemy("boss",795,405),enemy("grunt",890,487),enemy("grunt",712,340)];
-          bannerText="FINAL WAVE · IRON KING";
+          bannerText="FINAL WAVE · BODHI";
           burst(795,350,35,"#f6659d",2);shake=12;beep(95,.5,"sawtooth",.07);
         }
         bannerTimer=2.1;nextWave=0;hud();
@@ -311,7 +313,7 @@
           cueMusic(null);
           score+=player.hp*25;
           burst(player.x,player.y-95,70,"#ffd877",2.4);
-          showOverlay("CITY <em>LIBERATED.</em>","Final score: "+score.toLocaleString()+" · You defeated Iron King!","↻ PLAY AGAIN","MISSION COMPLETE · LEGEND STATUS");
+          showOverlay("CITY <em>LIBERATED.</em>","Final score: "+score.toLocaleString()+" · You defeated Bodhi!","↻ PLAY AGAIN","MISSION COMPLETE · LEGEND STATUS");
           beep(650,.3);
         } else {
           cueMusic("lost",153);
@@ -377,14 +379,7 @@
       }
       function special(){
         if(mode!=="playing"||finisher||player.rage<100)return;
-        player.rage=0;player.specialTime=.58;player.invuln=.75;player.cooldown=.5;
-        flash=.16;shake=17;ring(player.x,player.y-48,"#ffd46e",245);ring(player.x,player.y-48,"#ed6087",195);
-        burst(player.x,player.y-54,50,"#ffca67",2.2);
-        for(const e of enemies){
-          if(Math.hypot(e.x-player.x,(e.y-player.y)*1.2)<245)hit(e,e.type==="boss"?95:110,62);
-        }
-        pop(player.x,player.y-132,"MASS IMPACT!","#ffe799",true);
-        beep(95,.45,"sawtooth",.07);hud();
+        rocketFinisher();
       }
       function rocketFinisher(){
         if(mode!=="playing"||finisher)return;
@@ -420,7 +415,7 @@
         $("health-bar").style.width=player.hp+"%";
         $("health-text").textContent=player.hp+" / 100";
         $("energy-bar").style.width=player.rage+"%";
-        $("energy-text").textContent=Math.floor(player.rage)+"%"+(player.rage>=100?" READY!":"");
+        $("energy-text").textContent=Math.floor(player.rage)+"%"+(player.rage>=100?" FATALITY READY!":"");
         $("score").textContent=String(score).padStart(6,"0");
         $("wave-label").textContent="WAVE "+String(wave).padStart(2,"0")+" / 03";
         const boss=enemies.find(e=>e.type==="boss"&&!e.dead);
@@ -429,6 +424,8 @@
         $("combo").style.opacity=combo>1&&comboTimer>0?"1":"0";
         $("combo").innerHTML=combo+" HIT<small>COMBO!</small>";
         const specialBtn=document.querySelector(".special");
+        specialBtn.setAttribute("aria-label",player.rage>=100?"Rocket fatality ready":"Rocket fatality requires full special energy");
+        specialBtn.title="Full energy: L / E or tap for sunglasses rocket fatality";
         specialBtn.style.filter=player.rage>=100?"drop-shadow(0 0 14px #ffc45a) brightness(1.35)":"";
       }
       function update(dt){
@@ -569,10 +566,24 @@
         const attacking=(hero?a.punchTime:a.attackAnim)>0;
         ctx.save();ctx.translate(a.x,a.y);
         ctx.fillStyle="#070b16a0";ctx.beginPath();ctx.ellipse(0,2,boss?41:27,9,0,0,TAU);ctx.fill();
-        if((hero||boss)&&heroSheet&&heroSheet.complete&&heroSheet.naturalWidth>=1536){
+        if(boss&&villainAvatar&&villainAvatar.complete&&villainAvatar.naturalWidth>0){
+          if(a.windup>0){
+            ctx.strokeStyle="#ff527a";ctx.lineWidth=3;ctx.globalAlpha=.5+.4*Math.sin(clock*30);
+            ctx.beginPath();ctx.ellipse(0,0,69,14,0,0,TAU);ctx.stroke();ctx.globalAlpha=1;
+          }
+          ctx.save();ctx.scale(a.face,1);
+          const bob=a.stun>0?0:Math.sin(a.walk*2)*2;
+          ctx.translate(a.attackAnim>0?12:0,bob);
+          if(a.flash>0){ctx.shadowColor="#fff1d1";ctx.shadowBlur=22;}
+          ctx.drawImage(villainAvatar,-64,-192,128,192);ctx.restore();
+          ctx.fillStyle="#ff6689";ctx.font="bold 11px system-ui";ctx.textAlign="center";ctx.fillText("BODHI",0,-205);ctx.textAlign="left";
+          ctx.fillStyle="#161b2a";ctx.fillRect(-38,-200,76,5);ctx.fillStyle="#ff6689";ctx.fillRect(-38,-200,76*Math.max(0,a.hp/a.maxHp),5);
+          if(a.attackAnim>0){ctx.strokeStyle="#ff6689";ctx.lineWidth=6;ctx.beginPath();ctx.arc(a.face*42,-85,32,-1,1,a.face<0);ctx.stroke();}
+          ctx.restore();return;
+        }
+        if(hero&&heroSheet&&heroSheet.complete&&heroSheet.naturalWidth>=1536){
           let row=0,col=Math.floor(clock*3.5)%6;
-          if(boss){row=a.face>0?1:2;col=a.attackAnim>0?4:Math.floor(a.walk*1.2)%8;}
-          else if(finisher){row=3;col=Math.min(3,Math.floor(finisher.time*3));}
+          if(finisher){row=3;col=Math.min(3,Math.floor(finisher.time*3));}
           else if(mode==="lost"){row=5;col=0;}
           else if(mode==="won"){row=3;col=Math.floor(clock*3)%4;}
           else if(a.specialTime>0){row=4;col=Math.min(4,Math.floor((.58-a.specialTime)*8));}
@@ -582,11 +593,9 @@
             row=a.face>0?1:2;
             col=a.punchTime>0?4:Math.floor(a.walk*1.2)%8;
           }
-          if(boss){ctx.filter="contrast(1.15) saturate(.6)";ctx.scale(1.18,1.18);}
           ctx.globalAlpha=a.invuln>0&&Math.floor(clock*18)%2===0?.58:1;
           ctx.drawImage(heroSheet,col*192,row*208,192,208,-77,-164,154,166);
           ctx.globalAlpha=1;ctx.filter="none";
-          if(boss){ctx.fillStyle="#ff6689";ctx.font="bold 11px system-ui";ctx.textAlign="center";ctx.fillText("IRON KING",0,-175);ctx.fillStyle="#161b2a";ctx.fillRect(-35,-169,70,5);ctx.fillStyle="#ff6689";ctx.fillRect(-35,-169,70*Math.max(0,a.hp/a.maxHp),5);ctx.textAlign="left";}
           if(a.punchTime>0){
             const strength=a.punchTime/.22;
             ctx.strokeStyle="#ffe49a";ctx.lineWidth=8*strength;ctx.shadowBlur=22;ctx.shadowColor="#ffc35c";
