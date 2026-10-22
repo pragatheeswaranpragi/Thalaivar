@@ -6,8 +6,8 @@
     {id:"narasimha",name:"Narasimha",ability:"Sniper Support",description:"Lock a target. Each off-screen sniper shot eliminates up to three normal enemies.",color:"#b8e39a",frame:0},
     {id:"mathew",name:"Mathew",ability:"Vehicular Impact",description:"A heavy SUV sweeps the street, crushing enemy groups in its path.",color:"#ffb183",frame:1},
     {id:"hrithik",name:"Hrithik",ability:"Strike Team",description:"Hrithik lays down rifle bursts while three female fighters rush in with punches and kicks.",color:"#d5adff",frame:2},
-    {id:"pragi",name:"Pragi",ability:"Martial Arts",description:"Pragi runs into close combat with flowing jabs, crosses, elbows and roundhouse kicks.",color:"#89eaff",frame:3},
-    {id:"swetha",name:"Swetha",ability:"Guardian Circle",description:"A golden circle keeps mobs away, drains nearby enemies by 5 HP per second, and heals Thalaivar for ten seconds.",color:"#ffe0a0",frame:12}
+    {id:"pragi",name:"Pragathees",ability:"Martial Arts",description:"Pragathees runs into close combat with flowing jabs, crosses, elbows and roundhouse kicks.",color:"#89eaff",frame:3},
+    {id:"swetha",name:"Swetha",ability:"Guardian Circle",description:"A golden circle keeps mobs away, drains nearby enemies by 25 HP per second, and restores up to 60 HP over ten seconds.",color:"#ffe0a0",frame:12}
   ];
   const isMob=e=>!!e&&!e.dead&&["grunt","heavy","minion"].includes(e.type)&&!e.isBoss;
   class CameoSupport{
@@ -120,11 +120,11 @@
           helper.moving=distance>8;helper.face=c.player.face;helper.x+=(tx-helper.x)*blend;helper.y+=(ty-helper.y)*blend;helper.helpTime=Math.max(0,helper.helpTime-step);
           this.enforceBarrier(c);
           while(a.nextDrain<=end+1e-9&&a.nextDrain<=DURATION){
-            for(const enemy of this.targets(c))if(Math.hypot(enemy.x-c.player.x,(enemy.y-c.player.y)*1.6)<=195)this.damage(enemy,5,c,{drain:true});
+            for(const enemy of this.targets(c))if(Math.hypot(enemy.x-c.player.x,(enemy.y-c.player.y)*1.6)<=195)this.damage(enemy,25,c,{drain:true});
             a.nextDrain+=1;
           }
           while(a.nextPulse<=end&&a.nextPulse<DURATION){
-            const before=Number.isFinite(c.player.hp)?c.player.hp:100;c.player.hp=Math.min(100,before+3);helper.helpTime=.6;
+            const before=Number.isFinite(c.player.hp)?c.player.hp:100;c.player.hp=Math.min(100,before+6);helper.helpTime=.6;
             this.emit({kind:"care",healed:c.player.hp-before,x:helper.x,y:helper.y});a.nextPulse+=1;
           }
         }else if(a.id==="hrithik"||a.id==="pragi"){

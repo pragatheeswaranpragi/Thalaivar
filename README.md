@@ -24,14 +24,14 @@ Each boss has distinct reference-based action sprites. Waves, bosses, and levels
 
 ## Cameo support
 
-Choose **Narasimha**, **Mathew**, **Hrithik**, **Pragi**, or **Swetha** before each new game. Your selection remains through the continuous campaign; retries retain that ally.
+Choose **Narasimha**, **Mathew**, **Hrithik**, **Pragathees**, or **Swetha** before each new game. Your selection remains through the continuous campaign; retries retain that ally.
 
 - **Narasimha — Sniper Support:** each off-screen shot instantly eliminates the selected normal enemy and up to two nearby normal enemies (three total). Press **T**, tap **Target**, or click a normal enemy in the arena to set the sniper target.
 - **Mathew — Vehicular Impact:** a heavy SUV drives across the arena, damaging groups in its lane.
 - **Hrithik — Strike Team:** Hrithik aims and fires three-round rifle bursts while three female tactical fighters pursue enemies with close-range punches and kicks.
-- **Pragi — Martial Arts:** Pragi runs toward targets and chains jabs, crosses, elbows and roundhouse kicks. Strikes land after a visible windup and require physical contact; there are no lightning or shockwave powers.
+- **Pragathees — Martial Arts:** Pragathees runs toward targets and chains jabs, crosses, elbows and roundhouse kicks. Strikes land after a visible windup and require physical contact; there are no lightning or shockwave powers.
 
-- **Swetha — Guardian Circle:** uses the supplied gold-winged character sheet. For 10 seconds, a visible 150-unit protection circle follows Thalaivar, keeps normal mobs outside, blocks their attacks, drains nearby mobs by **5 HP each second**, and restores up to **30 HP**. The drain reaches the circle boundary and a small surrounding area (195 units). Bosses are unaffected and support cannot be summoned in boss fights.
+- **Swetha — Guardian Circle:** uses the supplied gold-winged character sheet. For 10 seconds, a visible 150-unit protection circle follows Thalaivar, keeps normal mobs outside, blocks their attacks, drains nearby mobs by **25 HP each second**, and restores up to **60 HP**. The drain reaches the circle boundary and a small surrounding area (195 units). Bosses are unaffected and support cannot be summoned in boss fights.
 
 Press **C** or tap **Summon** for one assist per normal wave. Each assist stays for exactly **10 unpaused seconds**, independent of combat slow motion or impact pauses. The timer and charge are displayed beneath the arena. A fresh wave restores the summon charge. If an assist clears the wave early, it stays on station until its 10-second extraction before the boss arrives.
 

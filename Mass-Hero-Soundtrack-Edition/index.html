@@ -243,7 +243,7 @@
         <button id="cinema" aria-pressed="true">Cinema On</button><button id="sound">♪ Effects On</button><button id="pause">Ⅱ Pause</button><button id="restart">↻ Restart</button>
       </div>
     </div>
-    <footer class="footer"><span>★ CONTINUOUS CAMPAIGN · WAVE → BOSS → NEXT WAVE</span><span>MADE FOR PRAGI · 2026</span></footer>
+    <footer class="footer"><span>★ CONTINUOUS CAMPAIGN · WAVE → BOSS → NEXT WAVE</span><span>MADE FOR PRAGATHEES · 2026</span></footer>
   <section class="cameo-picker" id="cameo-picker" hidden role="dialog" aria-modal="true" aria-labelledby="cameo-picker-title">
     <div class="cameo-dialog"><span class="eyebrow">THALAIVAR DOESN’T FIGHT ALONE</span><h2 id="cameo-picker-title">CHOOSE YOUR CAMEO</h2><p>Choose exactly one ally. Each summon lasts 10 seconds, once per normal wave. Cameos cannot be used in boss fights.</p><div class="cameo-cards" id="cameo-cards" role="radiogroup" aria-label="Cameo character"></div><div class="cameo-actions"><p id="cameo-selection-status" aria-live="polite">Choose one ally to join Thalaivar.</p><button id="cameo-cancel">Back</button><button id="cameo-confirm" disabled>SELECT ONE CAMEO</button></div></div>
   </section>
@@ -294,7 +294,7 @@
       const cameo=new MassHeroCameos.CameoSupport({
         dealDamage:(enemy,amount,options)=>{
           if(!cameo.active||phase!=="wave"||!MassHeroCameos.isMob(enemy))return;
-          if(options?.drain&&enemy.hp>amount){enemy.hp-=amount;enemy.flash=.08;pop(enemy.x,enemy.y-108,"-5","#ffe0a0");}
+          if(options?.drain&&enemy.hp>amount){enemy.hp-=amount;enemy.flash=.08;pop(enemy.x,enemy.y-108,"-"+amount,"#ffe0a0");}
           else hit(enemy,amount,0,true);
         },
         emit:event=>{

@@ -62,25 +62,25 @@ test('Hrithik fires rifle bursts while exactly three companions close into melee
  for(let i=0;i<40;i++)support.update(.025,context);
  assert(support.active.agents[0].x>start);assert(hits.some(h=>h.amount===24));assert(hits.some(h=>h.amount===26));assert(events.some(e=>e.kind==='rifle'));assert(events.some(e=>e.kind==='melee'));
 });
-test('Pragi pursues distant enemies and only lands grounded strikes inside melee range',()=>{
+test('Pragathees pursues distant enemies and only lands grounded strikes inside melee range',()=>{
  const {support,context,hits,events}=fixture('pragi',[mob(1,850,420,5000)]);support.summon(context);
  support.update(.25,context);assert.equal(hits.length,0);assert(support.active.fighter.x>315);
  for(let i=0;i<160;i++)support.update(.025,context);
  assert(hits.length>=3);assert(hits.some(h=>h.amount===48*1.45));assert(events.some(e=>e.kind==='melee'));assert(!events.some(e=>['shock','lightning'].includes(e.kind)));
  assert(support.active.effects.every(e=>!['shock','lightning'].includes(e.kind)));
 });
-test('Pragi windup allows an enemy to dodge before contact',()=>{
+test('Pragathees windup allows an enemy to dodge before contact',()=>{
  const {support,context,hits}=fixture('pragi',[mob(1,350,420,500)]);support.summon(context);support.update(.05,context);
  assert(support.active.fighter.attacking>0);context.enemies[0].x=900;support.update(.2,context);assert.equal(hits.length,0);
 });
 test('expired and stopped helpers cannot keep dealing damage',()=>{
  const {support,context,hits}=fixture('pragi',[mob(1,300,420,5000)]);support.summon(context);support.update(10,context);const count=hits.length;support.update(10,context);assert.equal(hits.length,count);assert.equal(support.damage(context.enemies[0],10,context),false);support.resetWave(2);support.summon(context);support.stop();support.update(10,context);assert.equal(hits.length,count);
 });
-test('Swetha heals thirty health and drains exactly five HP per second',()=>{
- const {support,context,hits,events}=fixture('swetha',[mob(1,320,420,1000),mob(2,800,420,1000)]);context.player.hp=50;
- support.summon(context);support.update(.5,context);assert.equal(context.player.hp,53);assert.equal(hits.length,0);
- support.update(.5,context);assert.equal(context.enemies[0].hp,995);assert.equal(context.enemies[1].hp,1000);
- support.update(9,context);assert.equal(context.player.hp,80);assert.equal(support.active,null);assert.equal(context.enemies[0].hp,950);assert.equal(events.filter(e=>e.kind==='care').length,10);
+test('Swetha heals sixty health and drains exactly twenty-five HP per second',()=>{
+ const {support,context,hits,events}=fixture('swetha',[mob(1,320,420,1000),mob(2,800,420,1000)]);context.player.hp=20;
+ support.summon(context);support.update(.5,context);assert.equal(context.player.hp,26);assert.equal(hits.length,0);
+ support.update(.5,context);assert.equal(context.enemies[0].hp,975);assert.equal(context.enemies[1].hp,1000);
+ support.update(9,context);assert.equal(context.player.hp,80);assert.equal(support.active,null);assert.equal(context.enemies[0].hp,750);assert.equal(events.filter(e=>e.kind==='care').length,10);
 });
 test('Swetha caps health, follows smoothly, and pause freezes healing and drain',()=>{
  const {support,context}=fixture('swetha');context.player.hp=99;support.summon(context);const x=support.active.helper.x;context.player.x=600;support.update(.25,context);
