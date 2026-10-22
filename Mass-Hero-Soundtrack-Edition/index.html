@@ -142,7 +142,7 @@
 <body>
   <div class="app" id="app">
     <header class="header">
-      <div class="brand"><div class="brand-mark">M<span>H</span></div><div><h1>MASS HERO</h1><p>NEON RECKONING · BODHI SHOWDOWN</p></div></div>
+      <div class="brand"><div class="brand-mark">M<span>H</span></div><div><h1>MASS HERO</h1><p>NEON RECKONING · THREE BOSS CAMPAIGN</p></div></div>
       <div class="header-right"><span class="status">SINGLE PLAYER</span><button id="fullscreen" aria-label="Toggle fullscreen">⛶ Fullscreen</button></div>
     </header>
     <main class="play-area">
@@ -163,9 +163,9 @@
         <div class="overlay" id="overlay">
           <span class="eyebrow" id="eyebrow">A ONE-HERO ARCADE EXPERIENCE</span>
           <h2 id="overlay-title">THE CITY<br><em>NEEDS A HERO.</em></h2>
-          <p id="overlay-message">Bodhi Kalpak is waiting. Dodge his rush. Break his guard. Finish with a rocket.</p>
-          <div class="chips"><span>ANIMATED BOSS DUEL</span><span>GUARD + DASH</span><span>ROCKET FATALITY</span></div>
-          <button id="main-button" disabled>LOADING FIGHT ANIMATIONS…</button><button id="campaign" style="background:transparent;color:#ffe3aa;border:1px solid #9b8ba175;padding:7px 15px;border-radius:4px;font-size:11px">Play 3-wave campaign</button><span class="hint">MOVE · FIGHT · CHARGE · CONQUER</span>
+          <p id="overlay-message">Three levels. Three bosses. Run the dockyard, break Kalpak Brother, then face Bodhi Kalpak.</p>
+          <div class="chips"><span>3 BOSS LEVELS</span><span>RUN + PUNCH</span><span>ROCKET FATALITY</span></div>
+          <button id="main-button" disabled>LOADING FIGHT ANIMATIONS…</button><button id="campaign" style="background:transparent;color:#ffe3aa;border:1px solid #9b8ba175;padding:7px 15px;border-radius:4px;font-size:11px">Quick duel: Bodhi Kalpak</button><span class="hint">MOVE · FIGHT · CHARGE · CONQUER</span>
         </div>
       </section>
       <div class="touch" aria-label="Touch game controls">
@@ -189,7 +189,7 @@
         <button id="cinema" aria-pressed="true">Cinema On</button><button id="sound">♪ Effects On</button><button id="pause">Ⅱ Pause</button><button id="restart">↻ Restart</button>
       </div>
     </div>
-    <footer class="footer"><span>★ BODHI SHOWDOWN · LIVE COMBAT EDITION</span><span>MADE FOR PRAGI · 2026</span></footer>
+    <footer class="footer"><span>★ THREE BOSS CAMPAIGN · DOCKYARD → MILL → NEON CITY</span><span>MADE FOR PRAGI · 2026</span></footer>
   </div>
   <audio id="soundtrack" preload="metadata" playsinline aria-label="Game background music"></audio>
   <script>
@@ -209,37 +209,63 @@
       const soundtrack = $("soundtrack");
       const musicFiles = {fight:"assets/jailer2-theme.mp3",lost:"assets/netru-ponavai.mp3"};
       let uid = 0;
-      let campaignMode=false, spriteStatus="loading";
+      let campaignMode=true, spriteStatus="loading", checkpointScore=0;
+      const LEVELS=[
+        {name:"THE ENFORCER",arena:"DOCKYARD AMBUSH",hp:210,speed:165,damage:13,cooldown:1.5,sky:["#0d2631","#29575b","#8eae98"],ground:"#29464a",sign:"DOCKS"},
+        {name:"KALPAK BROTHER",arena:"MILL LOCKDOWN",hp:280,speed:185,damage:16,cooldown:1.3,sky:["#241624","#61394a","#d49465"],ground:"#47363d",sign:"MILL"},
+        {name:"BODHI KALPAK",arena:"NEON RECKONING",hp:360,speed:200,damage:19,cooldown:1.15,sky:["#10182b","#40304f","#e47975"],ground:"#414152",sign:"ARCADE"}
+      ];
+      const currentLevel=()=>LEVELS[campaignMode?Math.max(0,wave-1):2];
       let finisher = null, comboInput = [], fallen = [], victoryDelay = 0;
       let cinematic = !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       let hitPause=0, impactTime=0, slowMotion=0, cameraZoom=1;
       const ACTOR_HEIGHT=136;
-      const villainFrames=[];
+      const villainFrames=[],campaignFrames=[[],[]];
       const villainSheet=typeof Image === "function"?new Image():null;
-      if(villainSheet){
+      const campaignSheet=typeof Image === "function"?new Image():null;
+      const spriteLoads={bodhi:false,campaign:false};
+      function decodeFrames(sheet,regions){
+        const surface=document.createElement("canvas");surface.width=sheet.naturalWidth;surface.height=sheet.naturalHeight;
+        const paint=surface.getContext("2d");paint.drawImage(sheet,0,0);
+        return regions.map(region=>{
+          const x=Math.floor(region[0]*surface.width),y=Math.floor(region[1]*surface.height),w=Math.floor(region[2]*surface.width),h=Math.floor(region[3]*surface.height);
+          const pixels=paint.getImageData(x,y,w,h).data;
+          let left=w,top=h,right=0,bottom=0;
+          for(let py=0;py<h;py++)for(let px=0;px<w;px++)if(pixels[(py*w+px)*4+3]>60){left=Math.min(left,px);right=Math.max(right,px);top=Math.min(top,py);bottom=Math.max(bottom,py);}
+          if(right-left<20||bottom-top<20)throw new Error("Incomplete boss animation");
+          return {x:x+left,y:y+top,w:right-left+1,h:bottom-top+1};
+        });
+      }
+      function finishSpriteLoad(){
+        if(!spriteLoads.bodhi||!spriteLoads.campaign)return;
+        spriteStatus="ready";
+        if(mode==="menu"){$("main-button").disabled=false;$("main-button").textContent="▶ START 3-LEVEL CAMPAIGN";}
+      }
+      function spriteFailure(){spriteStatus="error";$("main-button").disabled=false;$("main-button").textContent="RETRY CHARACTER DOWNLOAD";}
+      if(villainSheet&&campaignSheet){
         villainSheet.onload=()=>{
           try{
-          villainFrames.length=0;
-          const surface=document.createElement("canvas");surface.width=villainSheet.naturalWidth;surface.height=villainSheet.naturalHeight;
-          const paint=surface.getContext("2d");paint.drawImage(villainSheet,0,0);
-          // Explicit regions keep the extended punch inside its frame.
-          const regions=[[0,0,.25,.515],[.25,0,.25,.515],[.5,0,.25,.515],[.75,0,.25,.515],[0,.525,.275,.475],[.28,.525,.245,.475],[.535,.525,.215,.475],[.77,.525,.23,.475]];
-          for(let frame=0;frame<8;frame++){
-            const region=regions[frame];
-            const x=Math.floor(region[0]*surface.width),y=Math.floor(region[1]*surface.height),w=Math.floor(region[2]*surface.width),h=Math.floor(region[3]*surface.height);
-            const pixels=paint.getImageData(x,y,w,h).data;
-            let left=w,top=h,right=0,bottom=0;
-            for(let py=0;py<h;py++)for(let px=0;px<w;px++)if(pixels[(py*w+px)*4+3]>60){left=Math.min(left,px);right=Math.max(right,px);top=Math.min(top,py);bottom=Math.max(bottom,py);}
-            villainFrames.push({x:x+left,y:y+top,w:Math.max(1,right-left+1),h:Math.max(1,bottom-top+1)});
-          }
-          if(villainFrames.some(frame=>frame.w<20||frame.h<20))throw new Error("Incomplete animation sheet");
-          spriteStatus="ready";
-          if(mode==="menu"){$("main-button").disabled=false;$("main-button").textContent="▶ FIGHT BODHI KALPAK";}
-          }catch(error){villainSheet.onerror();}
+            const regions=[[0,0,.25,.515],[.25,0,.25,.515],[.5,0,.25,.515],[.75,0,.25,.515],[0,.525,.275,.475],[.28,.525,.245,.475],[.535,.525,.215,.475],[.77,.525,.23,.475]];
+            villainFrames.splice(0,villainFrames.length,...decodeFrames(villainSheet,regions));spriteLoads.bodhi=true;finishSpriteLoad();
+          }catch(error){spriteFailure();}
         };
-        villainSheet.onerror=()=>{spriteStatus="error";$("main-button").disabled=false;$("main-button").textContent="RETRY CHARACTER DOWNLOAD";};
-        villainSheet.src="assets/bodhi-kalpak-showdown.png";
+        campaignSheet.onload=()=>{
+          try{
+            // Atlas regions include extended fists and preserve complete running feet.
+            const cells=[[0,0,270,376],[264,0,276,376],[540,0,274,376],[814,0,272,376],[0,376,309,342],[311,376,229,342],[542,376,272,342],[814,376,272,342],[0,721,270,372],[264,721,276,372],[540,721,274,372],[814,721,272,372],[0,1093,309,355],[311,1093,229,355],[542,1093,272,355],[814,1093,272,355]];
+            const regions=cells.map(([x,y,w,h])=>[x/1086,y/1448,w/1086,h/1448]);
+            const frames=decodeFrames(campaignSheet,regions);
+            campaignFrames[0]=frames.slice(0,8);campaignFrames[1]=frames.slice(8);spriteLoads.campaign=true;finishSpriteLoad();
+          }catch(error){spriteFailure();}
+        };
+        villainSheet.onerror=spriteFailure;campaignSheet.onerror=spriteFailure;
       }
+      function loadBossSprites(){
+        spriteStatus="loading";$("main-button").disabled=true;$("main-button").textContent="LOADING BOSS ANIMATIONS…";
+        if(!spriteLoads.bodhi)villainSheet.src="assets/bodhi-kalpak-showdown.png?campaign=1";
+        if(!spriteLoads.campaign)campaignSheet.src="assets/campaign-bosses.png?retry="+Date.now();
+      }
+      loadBossSprites();
       const heroSheet = typeof Image === "function" ? new Image() : null;
       if (heroSheet) heroSheet.src = "assets/thalaivar-spritesheet.png";
       const skyline = Array.from({length:28}, (_, i) => ({x:i*37-16,w:33+(i*13%29),h:75+(i*43%105),seed:i*37}));
@@ -304,34 +330,42 @@
       function pop(x,y,text,color="#ffdd76",big=false){floaters.push({x,y,text,color,big,life:.9});}
       function ring(x,y,color,size=190){rings.push({x,y,r:10,max:size,life:.45,color});}
       function enemy(type,x,y){
-        const hp=type==="boss"?360:type==="heavy"?100:64;
-        return{id:++uid,type,x,y,hp,maxHp:hp,face:-1,speed:type==="boss"?185:type==="heavy"?82:rand(95,128),range:type==="boss"?84:type==="heavy"?60:51,cooldown:rand(.35,1.2),windup:0,stun:0,flash:0,attackAnim:0,attackIndex:0,attackKind:"punch",moving:false,rushTime:0,rushHit:false,rushFace:1,enraged:false,walk:rand(0,TAU),dead:false};
+        const profile=currentLevel(),bossId=campaignMode?wave-1:2;
+        const hp=type==="boss"?profile.hp:type==="heavy"?100:64;
+        return{id:++uid,type,bossId,x,y,hp,maxHp:hp,face:-1,speed:type==="boss"?profile.speed:type==="heavy"?82:rand(95,128),range:type==="boss"?84:type==="heavy"?60:51,cooldown:rand(.35,1.2),windup:0,stun:0,flash:0,attackAnim:0,attackIndex:0,attackKind:"punch",moving:false,guardTime:0,rushTime:0,rushHit:false,rushFace:1,enraged:false,walk:rand(0,TAU),dead:false};
       }
       function spawnWave() {
         wave++;
-        if(wave===1) {
-          enemies=[enemy("grunt",790,372),enemy("grunt",860,450),enemy("grunt",700,490)];
-          bannerText="WAVE ONE · THE AMBUSH";
-        } else if(wave===2) {
-          enemies=[enemy("grunt",765,340),enemy("grunt",855,430),enemy("heavy",910,485),enemy("grunt",700,505),enemy("grunt",845,380)];
-          bannerText="WAVE TWO · NO MERCY";
-        } else {
-          enemies=campaignMode?[enemy("boss",795,405),enemy("grunt",890,487),enemy("grunt",712,340)]:[enemy("boss",665,421)];
-          bannerText=campaignMode?"FINAL WAVE · BODHI KALPAK":"BODHI KALPAK · SHOWDOWN";
-          burst(795,350,35,"#f6659d",2);shake=12;beep(95,.5,"sawtooth",.07);
-        }
-        bannerTimer=2.1;nextWave=0;hud();
+        const level=currentLevel();
+        enemies=[enemy("boss",665,421)];
+        bannerText=(campaignMode?"LEVEL "+wave+" · ":"SHOWDOWN · ")+level.name;
+        bannerTimer=2.1;nextWave=0;victoryDelay=0;
+        burst(665,360,30,wave===1?"#7ae9ca":wave===2?"#ffc486":"#f6659d",1.4);
+        shake=9;beep(95,.3,"sawtooth",.05);hud();
       }
-      function start(campaign=campaignMode) {
-        if(spriteStatus!=="ready"){
-          if(spriteStatus==="error"){spriteStatus="loading";$("main-button").disabled=true;$("main-button").textContent="LOADING FIGHT ANIMATIONS…";villainSheet.src="assets/bodhi-kalpak-showdown.png?retry="+Date.now();}
-          return;
-        }
+      function advanceLevel(){
+        keys.clear();fallen=[];mode="playing";
+        player.x=280;player.y=421;player.hp=Math.min(100,player.hp+30);
+        player.invuln=1;player.cooldown=0;player.punchTime=0;player.dashTime=0;player.dashCooldown=0;player.moving=false;player.blocking=false;
+        combo=0;comboTimer=0;finisher=null;comboInput=[];hitPause=0;slowMotion=0;impactTime=0;cameraZoom=1;
+        $("overlay").classList.add("hidden");$("pause").textContent="Ⅱ Pause";
+        spawnWave();cueMusic("fight");$("stage").focus({preventScroll:true});
+      }
+      function completeLevel(){
+        score+=600*wave;checkpointScore=score;mode="levelclear";keys.clear();cueMusic(null);
+        showOverlay("LEVEL "+wave+" <em>CLEARED.</em>",currentLevel().name+" defeated. Next: "+LEVELS[wave].name+" · +30 health on entry.","▶ NEXT LEVEL · "+LEVELS[wave].name,"BOSS DEFEATED · "+currentLevel().arena);
+        beep(650,.25);hud();
+      }
+      function start(campaign=campaignMode,retry=false) {
+        if(spriteStatus!=="ready"){if(spriteStatus==="error")loadBossSprites();return;}
+        const resumeWave=retry&&campaignMode?Math.max(0,wave-1):0;
+        const resumeScore=retry?checkpointScore:0;
+        if(!retry)checkpointScore=0;
         campaignMode=campaign===true;
         keys.clear();finisher=null;comboInput=[];fallen=[];victoryDelay=0;hitPause=0;slowMotion=0;impactTime=0;cameraZoom=1;
-        player={x:campaignMode?170:280,y:421,hp:100,rage:0,face:1,cooldown:0,punchTime:0,dashTime:0,dashCooldown:0,dashX:1,dashY:0,invuln:0,specialTime:0,celebrateTime:0,moving:false,blocking:false,dashHits:[],walk:0};
+        player={x:280,y:421,hp:100,rage:0,face:1,cooldown:0,punchTime:0,dashTime:0,dashCooldown:0,dashX:1,dashY:0,invuln:0,specialTime:0,celebrateTime:0,moving:false,blocking:false,dashHits:[],walk:0};
         enemies=[];particles=[];rings=[];floaters=[];
-        score=0;wave=campaignMode?0:2;combo=0;comboTimer=0;nextWave=0;shake=0;flash=0;clock=0;mode="playing";
+        score=resumeScore;wave=campaignMode?resumeWave:2;combo=0;comboTimer=0;nextWave=0;shake=0;flash=0;clock=0;mode="playing";
         $("overlay").classList.add("hidden");$("campaign").hidden=true;$("pause").textContent="Ⅱ Pause";spawnWave();
         $("stage").focus({preventScroll:true});
         cueMusic("fight");
@@ -354,7 +388,7 @@
           beep(650,.3);
         } else {
           cueMusic("lost",153);
-          showOverlay("HERO <em>DOWN.</em>","The city is counting on you. Get back up and fight!","↻ TRY AGAIN","MISSION FAILED · NOT THE END");
+          showOverlay("HERO <em>DOWN.</em>",currentLevel().name+" won this round. Retry this level with full health.",(campaignMode?"↻ RETRY LEVEL "+wave:"↻ TRY AGAIN"),"MISSION FAILED · NOT THE END");
           beep(140,.38,"sawtooth");
         }
         hud();
@@ -380,6 +414,7 @@
       }
       function hit(e,dmg,knock=32) {
         if(e.dead)return;
+        if(e.guardTime>0&&dmg<60&&player.dashTime<=0){dmg=Math.ceil(dmg*.35);knock=8;pop(e.x,e.y-160,"BROTHER BLOCKS!","#f4b66c");}
         if(cinematic){hitPause=.045;impactTime=.22;}
         e.hp-=dmg;e.stun=e.type==="boss"?.11:.19;e.flash=.17;
         e.x=clamp(e.x+player.face*knock,32,926);
@@ -445,7 +480,7 @@
           ring(player.x,player.y-65,"#8cf2ff",65);pop(player.x,player.y-155,"BLOCK!","#a4edff");beep(360,.08,"triangle");hud();return;
         }
         if(keys.has("i"))pop(player.x,player.y-155,"GUARD BROKEN!","#ff8d98",true);
-        const dmg=e.type==="boss"?19:e.type==="heavy"?13:9;
+        const dmg=e.type==="boss"?LEVELS[e.bossId].damage:e.type==="heavy"?13:9;
         player.hp=Math.max(0,player.hp-dmg);player.invuln=.85;
         player.x=clamp(player.x+e.face*27,30,930);shake=12;flash=.11;combo=0;comboTimer=0;
         burst(player.x,player.y-54,16,"#ff6a7e");
@@ -461,10 +496,10 @@
         $("energy-bar").style.width=player.rage+"%";
         $("energy-text").textContent=Math.floor(player.rage)+"%"+(player.rage>=100?" FATALITY READY!":"");
         $("score").textContent=String(score).padStart(6,"0");
-        $("wave-label").textContent=campaignMode?"WAVE "+String(wave).padStart(2,"0")+" / 03":"BODHI SHOWDOWN";
+        $("wave-label").textContent=campaignMode?"LEVEL "+wave+" / 3 · "+currentLevel().arena:"BODHI SHOWDOWN";
         const boss=enemies.find(e=>e.type==="boss"&&!e.dead);
         $("boss-hud").style.display=boss?"block":"none";
-        if(boss)$("boss-bar").style.width=Math.max(0,boss.hp/boss.maxHp*100)+"%";
+        if(boss){$("boss-bar").style.width=Math.max(0,boss.hp/boss.maxHp*100)+"%";document.querySelector("#boss-hud strong").textContent=LEVELS[boss.bossId].name;document.querySelector("#boss-hud span").textContent=campaignMode?"LEVEL "+wave+" BOSS":"FINAL BOSS";}
         $("combo").style.opacity=combo>1&&comboTimer>0?"1":"0";
         $("combo").innerHTML=combo+" HIT<small>COMBO!</small>";
         const specialBtn=document.querySelector(".special");
@@ -535,11 +570,11 @@
           if(p.dashTime>0&&!p.dashHits.includes(e.id)&&Math.abs(e.x-p.x)<70&&Math.abs(e.y-p.y)<48){p.dashHits.push(e.id);hit(e,24,12);}
           if(e.dead)continue;
           e.flash=Math.max(0,e.flash-dt);e.cooldown=Math.max(0,e.cooldown-dt);
-          e.attackAnim=Math.max(0,e.attackAnim-dt);e.stun=Math.max(0,e.stun-dt);
+          e.attackAnim=Math.max(0,e.attackAnim-dt);e.guardTime=Math.max(0,e.guardTime-dt);e.stun=Math.max(0,e.stun-dt);
           e.moving=false;
           e.face=p.x>=e.x?1:-1;
           if(e.stun>0){e.rushTime=0;continue;}
-          if(e.type==="boss"&&e.hp<e.maxHp*.5&&!e.enraged){e.enraged=true;pop(e.x,e.y-165,"BODHI UNLEASHED!","#ff687f",true);ring(e.x,e.y-60,"#ff537e",160);}
+          if(e.type==="boss"&&e.bossId===2&&e.hp<e.maxHp*.5&&!e.enraged){e.enraged=true;pop(e.x,e.y-165,LEVELS[e.bossId].name+" UNLEASHED!","#ff687f",true);ring(e.x,e.y-60,"#ff537e",160);}
           if(e.rushTime>0){
             e.rushTime=Math.max(0,e.rushTime-dt);e.attackAnim=e.rushTime;e.face=e.rushFace;e.moving=true;e.walk+=dt*18;
             e.x=clamp(e.x+e.rushFace*570*dt,30,930);
@@ -551,10 +586,11 @@
             e.windup-=dt;
             if(e.windup<=0){
               e.attackAnim=e.type==="boss"?.34:.2;
+              if(e.bossId===1)e.guardTime=.55;
               if(e.attackKind==="rush"){e.rushTime=.38;e.rushFace=e.face;e.rushHit=false;}
               else if(Math.abs(dx)<e.range+20&&Math.abs(dy)<48)hurt(e);
               if(e.type==="boss"){ring(e.x,e.y-40,"#ff5b92",115);burst(e.x+e.face*45,e.y-45,14,"#fd6b9e",.7);}
-              e.cooldown=e.type==="boss"?(e.hp<e.maxHp*.5?1.05:1.55):e.type==="heavy"?1.25:1.1;
+              e.cooldown=e.type==="boss"?LEVELS[e.bossId].cooldown*(e.enraged?.72:1):e.type==="heavy"?1.25:1.1;
             }
             continue;
           }
@@ -563,7 +599,7 @@
             e.moving=true;
             e.x+=dx/m*speed*dt;e.y+=dy/m*speed*.75*dt;e.walk+=dt*10;
           }else if(e.cooldown<=0){
-            e.attackIndex++;e.attackKind=e.type==="boss"&&e.attackIndex%3===0?"rush":e.attackIndex%2===0?"heavy":"punch";
+            e.attackIndex++;e.attackKind=e.type==="boss"&&e.bossId>0&&e.attackIndex%3===0?"rush":e.attackIndex%2===0?"heavy":"punch";
             e.windup=e.type==="boss"?(e.attackKind==="rush"?.85:e.attackKind==="heavy"?.68:.46):.36;
             if(e.type==="boss")pop(e.x,e.y-170,e.attackKind==="rush"?"RUSH · DASH AWAY!":e.attackKind==="heavy"?"HEAVY PUNCH!":"PUNCH · GUARD!","#ff9ba8");
           }
@@ -571,8 +607,9 @@
         }
         enemies=enemies.filter(e=>!e.dead);
         if(enemies.length===0&&nextWave===0){
-          if(wave===3){if(victoryDelay<=0)end(true);return;}
-          nextWave=2;bannerText="STREET CLEARED!";bannerTimer=1.2;score+=250;p.celebrateTime=1.5;
+          if(victoryDelay>0)return;
+          if(wave===3||!campaignMode){end(true);return;}
+          completeLevel();return;
         }
         if(nextWave>0){nextWave-=dt;if(nextWave<=0)spawnWave();}
         hud();
@@ -581,8 +618,9 @@
         ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();
       }
       function background(){
+        const level=currentLevel();
         const sky=ctx.createLinearGradient(0,0,0,375);
-        sky.addColorStop(0,"#10182b");sky.addColorStop(.52,"#40304f");sky.addColorStop(1,"#e47975");
+        sky.addColorStop(0,level.sky[0]);sky.addColorStop(.52,level.sky[1]);sky.addColorStop(1,level.sky[2]);
         ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
         const halo=ctx.createRadialGradient(714,145,8,714,145,230);
         halo.addColorStop(0,"#ffd29b88");halo.addColorStop(.6,"#ff7e6b21");halo.addColorStop(1,"#ff7e6b00");
@@ -606,7 +644,7 @@
           }
         }
         ctx.shadowBlur=20;ctx.shadowColor="#ff5e92";rect(82,175,103,39,3,"#ee4d83");ctx.shadowBlur=0;
-        ctx.font="bold 19px system-ui";ctx.fillStyle="#fff4f4";ctx.fillText("ARCADE",92,200);
+        ctx.font="bold 19px system-ui";ctx.fillStyle="#fff4f4";ctx.fillText(level.sign,92,200);
         ctx.save();ctx.translate(827,183);ctx.shadowBlur=16;ctx.shadowColor="#46dcfc";rect(-11,-20,22,80,3,"#49b8d0");
         ctx.shadowBlur=0;ctx.rotate(-Math.PI/2);ctx.fillStyle="#112940";ctx.font="bold 12px system-ui";ctx.fillText("NIGHT",-20,4);ctx.restore();
         ctx.fillStyle="#11182c";ctx.fillRect(0,285,W,23);
@@ -614,7 +652,7 @@
         ctx.fillStyle="#141b2c";ctx.fillRect(0,310,W,18);
         for(let x=0;x<960;x+=110){ctx.fillStyle="#4b4054";ctx.fillRect(x+17,290,6,36);}
         const ground=ctx.createLinearGradient(0,310,0,H);
-        ground.addColorStop(0,"#414152");ground.addColorStop(.45,"#292c40");ground.addColorStop(1,"#171b2d");
+        ground.addColorStop(0,level.ground);ground.addColorStop(.45,"#292c40");ground.addColorStop(1,"#171b2d");
         ctx.fillStyle=ground;ctx.fillRect(0,328,W,212);
         ctx.strokeStyle="#a3a0ae25";ctx.lineWidth=1;
         for(let i=0;i<6;i++){const y=345+i*i*8;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
@@ -631,7 +669,7 @@
         ctx.fillStyle=vign;ctx.fillRect(0,0,W,H);
       }
       function villainPose(a){
-        return a.dead?5:a.stun>0?5:a.attackAnim>0?4:a.windup>0?(a.attackKind==="rush"?6:3):a.moving?1+Math.floor(a.walk*1.4)%2:Math.floor(clock*1.5)%2?3:0;
+        return a.dead?(a.bossId===2?5:7):a.stun>0?5:a.attackAnim>0?4:a.guardTime>0?3:a.windup>0?(a.attackKind==="rush"?6:3):a.moving?1+Math.floor(a.walk*1.4)%2:Math.floor(clock*1.5)%2?3:0;
       }
       function drawActor(a,hero=false){
         const boss=a.type==="boss",heavy=a.type==="heavy";
@@ -640,28 +678,31 @@
         const attacking=(hero?a.punchTime:a.attackAnim)>0;
         ctx.save();ctx.translate(a.x,a.y);
         ctx.fillStyle="#070b16a0";ctx.beginPath();ctx.ellipse(0,2,boss?41:27,9,0,0,TAU);ctx.fill();
-        if(boss&&villainSheet&&villainFrames.length===8){
+        const artSheet=a.bossId===2?villainSheet:campaignSheet;
+        const artFrames=a.bossId===2?villainFrames:campaignFrames[a.bossId];
+        if(boss&&artSheet&&artFrames?.length===8){
           if(a.windup>0){
             ctx.strokeStyle="#ff527a";ctx.lineWidth=3;ctx.globalAlpha=.5+.4*Math.sin(clock*30);
             ctx.beginPath();ctx.ellipse(0,0,69,14,0,0,TAU);ctx.stroke();ctx.globalAlpha=1;
           }
           ctx.save();
           const pose=villainPose(a);
-          const frame=villainFrames[pose];
+          const frame=artFrames[pose];
           const bob=a.moving?Math.sin(a.walk*2)*1.5:Math.sin(clock*3)*.6;
           ctx.translate(a.attackAnim>0?a.face*8:0,bob);
           if(a.flash>0){ctx.shadowColor="#fff1d1";ctx.shadowBlur=22;}
-          if(a.dead){ctx.globalAlpha=Math.min(1,a.fallTime*2);ctx.rotate(-a.face*Math.min(1,(.85-a.fallTime)/.35)*1.35);}
+          if(a.dead){ctx.globalAlpha=Math.min(1,a.fallTime*2);if(a.bossId===2)ctx.rotate(-a.face*Math.min(1,(.85-a.fallTime)/.35)*1.35);}
           if(frame){
             ctx.scale(a.face,1);
-            const height=ACTOR_HEIGHT*frame.h/villainFrames[0].h,width=frame.w/frame.h*height;
-            ctx.drawImage(villainSheet,frame.x,frame.y,frame.w,frame.h,-width/2,-height,width,height);
+            const height=ACTOR_HEIGHT*frame.h/artFrames[0].h,width=frame.w/frame.h*height;
+            ctx.drawImage(artSheet,frame.x,frame.y,frame.w,frame.h,-width/2,-height,width,height);
           }
           ctx.restore();
           if(!a.dead){
-            ctx.fillStyle="#ff6689";ctx.font="bold 11px system-ui";ctx.textAlign="center";ctx.fillText("BODHI KALPAK",0,-155);ctx.textAlign="left";
+            ctx.fillStyle="#ff6689";ctx.font="bold 11px system-ui";ctx.textAlign="center";ctx.fillText(LEVELS[a.bossId].name,0,-155);ctx.textAlign="left";
             ctx.fillStyle="#161b2a";ctx.fillRect(-38,-150,76,5);ctx.fillStyle="#ff6689";ctx.fillRect(-38,-150,76*Math.max(0,a.hp/a.maxHp),5);
           }
+          if(a.guardTime>0){ctx.strokeStyle="#ffc17f";ctx.lineWidth=3;ctx.beginPath();ctx.arc(a.face*25,-70,40,-1.3,1.3,a.face<0);ctx.stroke();}
           if(a.attackAnim>0){ctx.strokeStyle="#ff6689";ctx.lineWidth=6;ctx.beginPath();ctx.arc(a.face*42,-85,32,-1,1,a.face<0);ctx.stroke();}
           ctx.restore();return;
         }
@@ -834,10 +875,10 @@
         button.addEventListener("lostpointercapture",release);
         button.addEventListener("contextmenu",(event)=>event.preventDefault());
       });
-      $("main-button").addEventListener("click",()=>mode==="paused"?pause():start());
+      $("main-button").addEventListener("click",()=>{if(mode==="paused")pause();else if(mode==="levelclear")advanceLevel();else start(campaignMode,mode==="lost");});
       $("pause").addEventListener("click",()=>{if(mode==="playing"||mode==="paused")pause();});
       $("restart").addEventListener("click",()=>start());
-      $("campaign").addEventListener("click",()=>start(true));
+      $("campaign").addEventListener("click",()=>start(false));
       $("cinema").textContent=cinematic?"Cinema On":"Cinema Off";
       $("cinema").setAttribute("aria-pressed",String(cinematic));
       $("cinema").addEventListener("click",()=>{

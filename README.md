@@ -1,4 +1,4 @@
-# Mass Hero: Neon Reckoning — Bodhi Showdown
+# Mass Hero: Neon Reckoning — Three Boss Campaign
 
 A browser arcade brawler starring Thalaivar against Bodhi Kalpak.
 
@@ -10,7 +10,13 @@ Serve the game directory with any static web server:
 python3 -m http.server 8000 --directory Mass-Hero-Soundtrack-Edition
 ```
 
-Choose **Fight Bodhi Kalpak** to face the animated boss immediately, or **Play 3-wave campaign** for the original street battles. Character animations must load before the fight starts; a failed download offers a retry instead of silently displaying a static character.
+Choose **Start 3-level campaign** to fight:
+
+1. **The Enforcer** — the bearded fighter at the dockyard, with running and heavy punches.
+2. **Kalpak Brother** — the moustached fighter at the mill, with rush attacks and a defensive guard. Dash attacks bypass his guard.
+3. **Bodhi Kalpak** — the final boss in the neon city, with stronger attacks and an enraged phase.
+
+Each boss has distinct reference-based action sprites. Defeat a boss and choose **Next Level** to continue; gain 30 health and keep your energy and score. A defeat lets you retry the current level with full health and the score earned in earlier levels. **Restart** resets the campaign. **Quick duel: Bodhi Kalpak** retains the direct final-boss fight. Character animations must load before the fight starts; a failed download offers a retry instead of silently displaying a static character.
 
 ## Controls
 
