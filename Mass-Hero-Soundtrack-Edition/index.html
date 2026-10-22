@@ -146,7 +146,7 @@
         <canvas id="game" width="960" height="540">Your browser needs Canvas support to play Mass Hero.</canvas>
         <div class="hud">
           <div class="hero-hud">
-            <div class="bar-label"><span>PRAGI <b>★</b></span><span id="health-text">100 / 100</span></div>
+            <div class="bar-label"><span>THALAIVAR <b>★</b></span><span id="health-text">100 / 100</span></div>
             <div class="meter"><div id="health-bar"></div></div>
             <div class="bar-label energy-label"><span>SPECIAL ENERGY</span><span id="energy-text">0%</span></div>
             <div class="meter energy-meter"><div id="energy-bar"></div></div>
@@ -179,7 +179,7 @@
       </div>
     </main>
     <div class="toolbar">
-      <div class="controls-text"><span><kbd>WASD</kbd> Move</span><span><kbd>J</kbd> Punch</span><span><kbd>K</kbd> Dash</span><span><kbd>L</kbd> Special</span></div>
+      <div class="controls-text"><span><kbd>WASD</kbd> Move</span><span><kbd>J</kbd> Punch</span><span><kbd>K</kbd> Dash</span><span><kbd>L</kbd> Special</span><span><kbd>↓ → ↓ → R</kbd> Rocket finisher · 100% energy</span></div>
       <div class="toolbar-actions">
         <button id="music" aria-label="Toggle background music">♫ BGM On</button>
         <button id="sound">♪ Effects On</button><button id="pause">Ⅱ Pause</button><button id="restart">↻ Restart</button>
@@ -205,6 +205,7 @@
       const soundtrack = $("soundtrack");
       const musicFiles = {fight:"assets/jailer2-theme.mp3",lost:"assets/netru-ponavai.mp3"};
       let uid = 0;
+      let finisher = null, comboInput = [];
       const heroSheet = typeof Image === "function" ? new Image() : null;
       if (heroSheet) heroSheet.src = "assets/thalaivar-spritesheet.png";
       const skyline = Array.from({length:28}, (_, i) => ({x:i*37-16,w:33+(i*13%29),h:75+(i*43%105),seed:i*37}));
@@ -288,7 +289,7 @@
         bannerTimer=2.1;nextWave=0;hud();
       }
       function start() {
-        keys.clear();
+        keys.clear();finisher=null;comboInput=[];
         player={x:170,y:421,hp:100,rage:0,face:1,cooldown:0,punchTime:0,dashTime:0,dashCooldown:0,dashX:1,dashY:0,invuln:0,specialTime:0,celebrateTime:0,moving:false,walk:0};
         enemies=[];particles=[];rings=[];floaters=[];
         score=0;wave=0;combo=0;comboTimer=0;nextWave=0;shake=0;flash=0;clock=0;mode="playing";
@@ -357,7 +358,7 @@
         }
       }
       function punch(){
-        if(mode!=="playing"||player.cooldown>0||player.dashTime>0)return;
+        if(mode!=="playing"||finisher||player.cooldown>0||player.dashTime>0)return;
         player.cooldown=.29;player.punchTime=.22;beep(260,.075,"square",.018);
         let landed=false;
         for(const e of enemies){
@@ -368,14 +369,14 @@
         hud();
       }
       function dash(){
-        if(mode!=="playing"||player.dashCooldown>0||player.dashTime>0)return;
+        if(mode!=="playing"||finisher||player.dashCooldown>0||player.dashTime>0)return;
         const v=move();
         player.dashX=v.x||player.face;player.dashY=v.y;
         player.dashTime=.18;player.dashCooldown=1.35;player.invuln=Math.max(player.invuln,.27);
         burst(player.x,player.y-15,10,"#7de6fa",.55);beep(420,.15,"sine");
       }
       function special(){
-        if(mode!=="playing"||player.rage<100)return;
+        if(mode!=="playing"||finisher||player.rage<100)return;
         player.rage=0;player.specialTime=.58;player.invuln=.75;player.cooldown=.5;
         flash=.16;shake=17;ring(player.x,player.y-48,"#ffd46e",245);ring(player.x,player.y-48,"#ed6087",195);
         burst(player.x,player.y-54,50,"#ffca67",2.2);
@@ -384,6 +385,24 @@
         }
         pop(player.x,player.y-132,"MASS IMPACT!","#ffe799",true);
         beep(95,.45,"sawtooth",.07);hud();
+      }
+      function rocketFinisher(){
+        if(mode!=="playing"||finisher)return;
+        if(player.rage<100){pop(player.x,player.y-150,"NEED 100% ENERGY");return;}
+        const target=enemies.find(e=>e.type==="boss"&&!e.dead)||enemies.find(e=>!e.dead);
+        if(!target)return;
+        player.rage=0;player.dashTime=0;player.punchTime=0;
+        player.face=target.x>=player.x?1:-1;
+        finisher={time:0,target,launched:false,x:player.x,y:player.y-80};
+        keys.clear();pop(player.x,player.y-180,"THALAIVAR · GLASSES ON!","#ffe799",true);hud();
+      }
+      function finisherInput(key){
+        const now=performance.now();
+        comboInput=comboInput.filter(item=>now-item.time<2200);
+        comboInput.push({key,time:now});comboInput=comboInput.slice(-5);
+        if(comboInput.map(item=>item.key).join(",")==="arrowdown,arrowright,arrowdown,arrowright,r"){
+          comboInput=[];rocketFinisher();
+        }
       }
       function hurt(e){
         if(player.invuln>0||player.dashTime>0||mode!=="playing")return;
@@ -425,6 +444,20 @@
         $("flash").style.opacity=flash*.48;
         if(mode!=="playing")return;
         const p=player;
+        if(finisher){
+          const f=finisher;f.time+=dt;
+          if(f.time>=1.15){
+            if(!f.launched){f.launched=true;pop(p.x,p.y-165,"ROCKET RECKONING!","#ffce75",true);beep(90,.4,"sawtooth",.08);}
+            const tx=f.target.x,ty=f.target.y-65;
+            const distance=Math.hypot(tx-f.x,ty-f.y),step=850*dt;
+            if(distance<=step){
+              burst(tx,ty,85,"#ffae49",2.8);ring(tx,ty,"#ffe399",260);flash=.5;shake=25;
+              for(const e of enemies)if(!e.dead&&Math.hypot(e.x-tx,e.y-f.target.y)<190)hit(e,e===f.target?e.maxHp:140,15);
+              p.rage=0;finisher=null;hud();
+            }else{f.x+=(tx-f.x)/distance*step;f.y+=(ty-f.y)/distance*step;burst(f.x,f.y,3,"#ffa647",.4);}
+          }
+          return;
+        }
         p.cooldown=Math.max(0,p.cooldown-dt);p.punchTime=Math.max(0,p.punchTime-dt);
         p.dashCooldown=Math.max(0,p.dashCooldown-dt);p.invuln=Math.max(0,p.invuln-dt);
         p.specialTime=Math.max(0,p.specialTime-dt);
@@ -536,9 +569,11 @@
         const attacking=(hero?a.punchTime:a.attackAnim)>0;
         ctx.save();ctx.translate(a.x,a.y);
         ctx.fillStyle="#070b16a0";ctx.beginPath();ctx.ellipse(0,2,boss?41:27,9,0,0,TAU);ctx.fill();
-        if(hero&&heroSheet&&heroSheet.complete&&heroSheet.naturalWidth>=1536){
+        if((hero||boss)&&heroSheet&&heroSheet.complete&&heroSheet.naturalWidth>=1536){
           let row=0,col=Math.floor(clock*3.5)%6;
-          if(mode==="lost"){row=5;col=0;}
+          if(boss){row=a.face>0?1:2;col=a.attackAnim>0?4:Math.floor(a.walk*1.2)%8;}
+          else if(finisher){row=3;col=Math.min(3,Math.floor(finisher.time*3));}
+          else if(mode==="lost"){row=5;col=0;}
           else if(mode==="won"){row=3;col=Math.floor(clock*3)%4;}
           else if(a.specialTime>0){row=4;col=Math.min(4,Math.floor((.58-a.specialTime)*8));}
           else if(a.celebrateTime>0){row=3;col=Math.floor(clock*5)%4;}
@@ -547,9 +582,11 @@
             row=a.face>0?1:2;
             col=a.punchTime>0?4:Math.floor(a.walk*1.2)%8;
           }
+          if(boss){ctx.filter="contrast(1.15) saturate(.6)";ctx.scale(1.18,1.18);}
           ctx.globalAlpha=a.invuln>0&&Math.floor(clock*18)%2===0?.58:1;
           ctx.drawImage(heroSheet,col*192,row*208,192,208,-77,-164,154,166);
-          ctx.globalAlpha=1;
+          ctx.globalAlpha=1;ctx.filter="none";
+          if(boss){ctx.fillStyle="#ff6689";ctx.font="bold 11px system-ui";ctx.textAlign="center";ctx.fillText("IRON KING",0,-175);ctx.fillStyle="#161b2a";ctx.fillRect(-35,-169,70,5);ctx.fillStyle="#ff6689";ctx.fillRect(-35,-169,70*Math.max(0,a.hp/a.maxHp),5);ctx.textAlign="left";}
           if(a.punchTime>0){
             const strength=a.punchTime/.22;
             ctx.strokeStyle="#ffe49a";ctx.lineWidth=8*strength;ctx.shadowBlur=22;ctx.shadowColor="#ffc35c";
@@ -607,6 +644,26 @@
           ctx.fillStyle=boss?"#ff6390":"#91e9c3";ctx.fillRect(a.x-width/2,y,width*Math.max(0,a.hp/a.maxHp),5);
         }
       }
+      function drawFinisher(){
+        if(!finisher)return;
+        const f=finisher,p=player;
+        ctx.save();
+        if(f.time<1.15){
+          ctx.translate(p.x,p.y-128);ctx.scale(p.face,1);
+          ctx.shadowColor="#ffe6a0";ctx.shadowBlur=22;
+          rect(-26,-8,23,14,5,"#111824");rect(3,-8,23,14,5,"#111824");
+          ctx.strokeStyle="#ffd77d";ctx.lineWidth=3;ctx.strokeRect(-26,-8,23,14);ctx.strokeRect(3,-8,23,14);
+          ctx.beginPath();ctx.moveTo(-3,-3);ctx.lineTo(3,-3);ctx.stroke();
+          ctx.fillStyle="#fff6d3";ctx.fillRect(15,-14,3,26);ctx.fillRect(4,-3,26,3);
+        }else{
+          ctx.translate(p.x,p.y-80);ctx.scale(p.face,1);
+          rect(-25,-12,95,22,5,"#475e43");rect(-28,-15,13,28,3,"#29342a");rect(14,8,12,20,3,"#263128");
+          ctx.restore();ctx.save();ctx.translate(f.x,f.y);ctx.rotate(Math.atan2(f.target.y-65-f.y,f.target.x-f.x));
+          rect(-16,-6,29,12,3,"#ddd7ba");ctx.fillStyle="#ff6749";ctx.beginPath();ctx.moveTo(23,0);ctx.lineTo(10,-8);ctx.lineTo(10,8);ctx.fill();
+          ctx.fillStyle="#ffcc64";ctx.fillRect(-29,-4,13,8);
+        }
+        ctx.restore();
+      }
       function drawEffects(){
         for(const r of rings){
           ctx.globalAlpha=Math.min(1,r.life*2);ctx.strokeStyle=r.color;ctx.lineWidth=9*r.life+1;
@@ -636,7 +693,7 @@
             ctx.fillStyle=glow;ctx.fillRect(player.x-120,player.y-170,240,240);ctx.globalAlpha=1;
           }
         }
-        drawEffects();ctx.restore();
+        drawFinisher();drawEffects();ctx.restore();
         ctx.fillStyle="#080b17a8";ctx.fillRect(0,0,W,5);ctx.fillRect(0,H-5,W,5);
       }
       function animate(now){
@@ -647,13 +704,14 @@
         const k=key.toLowerCase();
         return k===" "?"j":k==="shift"?"k":k==="e"?"l":k;
       };
-      const playable=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright","j","k","l","p","escape"]);
+      const playable=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright","j","k","l","r","p","escape"]);
       document.addEventListener("keydown",(event)=>{
         const k=normalize(event.key);
         if(!playable.has(k))return;
         if(mode==="playing"||mode==="paused")event.preventDefault();
         if(k==="p"||k==="escape"){if(!event.repeat)pause();return;}
         if(mode!=="playing")return;
+        if(!event.repeat&&!keys.has(k))finisherInput(k);
         if(!keys.has(k)){if(k==="j")punch();if(k==="k")dash();if(k==="l")special();}
         keys.add(k);
       });
