@@ -25,7 +25,7 @@
     .header button,.toolbar button {background:#242b3d;color:#e0e4f0;border:1px solid #394257;border-radius:7px;padding:9px 12px;font-size:11px;font-weight:800}
     .header button:hover,.toolbar button:hover {background:#36415a}
     .play-area {width:100%;flex:1;min-height:0;display:grid;place-items:center;padding:0 clamp(0px,2vw,28px)}
-    .stage {position:relative;width:min(100%,calc((100dvh - 164px)*16/9));max-width:1500px;aspect-ratio:16/9;overflow:hidden;background:#171727;border:1px solid #343c55;box-shadow:0 20px 90px #0009;outline:none}
+    .stage {position:relative;width:min(100%,calc((100dvh - 280px)*16/9));max-width:1500px;aspect-ratio:16/9;overflow:hidden;background:#171727;border:1px solid #343c55;box-shadow:0 20px 90px #0009;outline:none}
     canvas {display:block;width:100%;height:100%;object-fit:contain}
     .hud {position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:20px clamp(12px,2.4vw,34px);pointer-events:none;background:linear-gradient(#090d20b5,transparent);z-index:2}
     .hero-hud {width:min(34%,280px)}
@@ -137,6 +137,47 @@
     :fullscreen .play-area {flex:1}
     :fullscreen .stage {max-height:calc(100dvh - 136px)}
     @media(prefers-reduced-motion:reduce){.meter>div {transition:none}}
+
+    .cameo-strip {--cameo-color:#8492b0;width:min(100%,1500px);display:flex;align-items:center;gap:12px;padding:10px 14px;background:#101827;border:1px solid #303c53;border-top:0;color:#dae0ef}
+    .cameo-strip .support-info {flex:1;min-width:0}
+    #cameo-name {display:block;color:var(--cameo-color);font-size:12px;font-weight:900;letter-spacing:.5px}
+    #cameo-state {display:block;font-size:10px;color:#aebcd1;margin:4px 0}
+    .cameo-charge {max-width:260px;height:3px;background:#293348}
+    #cameo-meter {height:100%;width:100%;background:var(--cameo-color)}
+    .cameo-strip button {min-height:40px;padding:7px 12px;border-radius:5px;border:1px solid var(--cameo-color);background:#263349;color:#fff3db;font-size:10px;font-weight:900}
+    .cameo-strip button:disabled {opacity:.45;cursor:default}
+    .cameo-picker {position:fixed;inset:0;z-index:30;display:grid;place-items:center;overflow-y:auto;padding:24px;background:radial-gradient(ellipse at 30% 15%,#29344ef5,#090d1bf9 75%)}
+    .cameo-picker[hidden] {display:none}
+    .cameo-dialog {width:min(1050px,100%);padding:24px;border:1px solid #45526b;background:#111827;box-shadow:0 25px 100px #0009;border-radius:12px}
+    .cameo-dialog h2 {font-size:clamp(25px,4vw,43px);font-style:italic;margin:8px 0;color:#ffe0a0;letter-spacing:-1px}
+    .cameo-dialog>p {font-size:13px;color:#b9c6d9;line-height:1.5;margin:5px 0 20px}
+    .cameo-cards {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .cameo-card {min-width:0;text-align:left;padding:12px;border:2px solid #35425b;border-radius:8px;background:radial-gradient(ellipse at 50% 28%,#35415a,#182235 70%);color:#eef2fc;transition:border-color .15s,transform .15s}
+    .cameo-card:hover {border-color:var(--cameo-color)}
+    .cameo-card[aria-checked="true"] {border-color:var(--cameo-color);box-shadow:0 0 20px #ffd78a22;transform:translateY(-3px)}
+    .cameo-card canvas {height:210px;width:100%;object-fit:contain}
+    .cameo-card strong {display:block;font-size:20px;color:var(--cameo-color)}
+    .cameo-card span {display:block;font-size:11px;font-weight:900;margin:5px 0}
+    .cameo-card p {font-size:11px;line-height:1.5;color:#b7c5d8;margin:0;min-height:65px}
+    .cameo-actions {margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+    .cameo-actions p {color:#b9c6d9;font-size:12px;margin:0;flex:1 1 230px}
+    .cameo-actions button {min-height:44px;padding:10px 16px;border-radius:5px;border:1px solid #60728c;background:#26354b;color:#e9f1ff;font-weight:850;font-size:12px}
+    #cameo-confirm {background:#ffce7b;color:#291c22;border-color:#ffce7b}
+    #cameo-confirm:disabled {opacity:.45;cursor:default}
+    @media(max-width:720px){
+      .cameo-picker {padding:12px}.cameo-dialog {padding:16px}
+      .cameo-dialog>p {font-size:11px;margin-bottom:12px}
+      .cameo-cards {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      .cameo-card {padding:9px}.cameo-card canvas {height:125px}
+      .cameo-card strong {font-size:17px}.cameo-card p {font-size:10px;min-height:58px}.cameo-card span {font-size:10px}
+      .cameo-actions {gap:8px;margin-top:12px}.cameo-actions p {flex-basis:100%;font-size:11px}
+      .cameo-strip {gap:7px;padding:9px 10px}.cameo-strip button {font-size:9px;padding:6px 8px}
+      #cameo-name {font-size:10px}#cameo-state {font-size:9px}
+    }
+    @media(orientation:landscape) and (max-height:570px) and (pointer:coarse){
+      .cameo-strip {position:absolute;bottom:110px;left:12px;width:min(370px,55%);z-index:12;border:1px solid #40506b;background:#0d1728d9;padding:6px 8px}
+      .cameo-strip button {min-height:34px}
+    }
   </style>
 </head>
 <body>
@@ -168,6 +209,10 @@
           <button id="main-button" disabled>LOADING FIGHT ANIMATIONS…</button><button id="campaign" style="background:transparent;color:#ffe3aa;border:1px solid #9b8ba175;padding:7px 15px;border-radius:4px;font-size:11px">Quick duel: Bodhi Kalpak</button><span class="hint">MOVE · FIGHT · CHARGE · CONQUER</span>
         </div>
       </section>
+      <div class="cameo-strip" id="cameo-strip" aria-label="Cameo support">
+        <div class="support-info"><strong id="cameo-name">CAMEO SUPPORT</strong><span id="cameo-state">Pick one ally before play</span><div class="cameo-charge"><div id="cameo-meter"></div></div></div>
+        <button id="cameo-target" hidden aria-label="Cycle sniper target">T · TARGET</button><button id="cameo-call" disabled>C · SUMMON</button>
+      </div>
       <div class="touch" aria-label="Touch game controls">
         <div class="dpad">
           <button data-control="w" class="up" aria-label="Move up">▲</button>
@@ -183,15 +228,20 @@
       </div>
     </main>
     <div class="toolbar">
-      <div class="controls-text"><span><kbd>WASD</kbd> Move</span><span><kbd>J</kbd> Hold to combo</span><span><kbd>I</kbd> Hold guard</span><span><kbd>K</kbd> Dash</span><span><kbd>L</kbd> Fatality · 100% energy</span><span><kbd>↓ → ↓ → R</kbd> Rocket finisher · 100% energy</span></div>
+      <div class="controls-text"><span><kbd>WASD</kbd> Move</span><span><kbd>J</kbd> Hold to combo</span><span><kbd>C</kbd> Cameo</span><span><kbd>I</kbd> Hold guard</span><span><kbd>K</kbd> Dash</span><span><kbd>L</kbd> Fatality · 100% energy</span><span><kbd>↓ → ↓ → R</kbd> Rocket finisher · 100% energy</span></div>
       <div class="toolbar-actions">
         <button id="music" aria-label="Toggle background music">♫ BGM On</button>
         <button id="cinema" aria-pressed="true">Cinema On</button><button id="sound">♪ Effects On</button><button id="pause">Ⅱ Pause</button><button id="restart">↻ Restart</button>
       </div>
     </div>
     <footer class="footer"><span>★ CONTINUOUS CAMPAIGN · WAVE → BOSS → NEXT WAVE</span><span>MADE FOR PRAGI · 2026</span></footer>
+  <section class="cameo-picker" id="cameo-picker" hidden role="dialog" aria-modal="true" aria-labelledby="cameo-picker-title">
+    <div class="cameo-dialog"><span class="eyebrow">THALAIVAR DOESN’T FIGHT ALONE</span><h2 id="cameo-picker-title">CHOOSE YOUR CAMEO</h2><p>Choose exactly one ally. Each summon lasts 10 seconds, once per normal wave. Cameos cannot be used in boss fights.</p><div class="cameo-cards" id="cameo-cards" role="radiogroup" aria-label="Cameo character"></div><div class="cameo-actions"><p id="cameo-selection-status" aria-live="polite">Choose one ally to join Thalaivar.</p><button id="cameo-cancel">Back</button><button id="cameo-confirm" disabled>SELECT ONE CAMEO</button></div></div>
+  </section>
   </div>
   <audio id="soundtrack" preload="metadata" playsinline aria-label="Game background music"></audio>
+  <script src="cameo-support.js"></script>
+  <script src="cameo-presentation.js"></script>
   <script>
     (() => {
       "use strict";
@@ -219,7 +269,33 @@
       const currentLevel=()=>LEVELS[campaignMode?Math.max(0,wave-1):2];
       let finisher = null, comboInput = [], fallen = [], victoryDelay = 0;
       let cinematic = !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-      let hitPause=0, impactTime=0, slowMotion=0, cameraZoom=1;
+      let hitPause=0, impactTime=0, slowMotion=0, cameraZoom=1,cameraCenterX=W/2;
+      let pendingCameoStart=null;
+      const cameoContext=()=>({mode,phase,transition:!!transition,enemies,player,width:W,height:H});
+      const cameo=new MassHeroCameos.CameoSupport({
+        dealDamage:(enemy,amount)=>{if(cameo.active&&phase==="wave"&&MassHeroCameos.isMob(enemy))hit(enemy,amount,0,true);},
+        emit:event=>{
+          if(event.kind==="summon"){const ally=MassHeroCameos.ROSTER.find(r=>r.id===event.id);pop(event.x,event.y-170,ally.name.toUpperCase()+" · 10 SECOND ASSIST",ally.color,true);beep(430,.18,"triangle",.04);}
+          if(event.kind==="sniper"){burst(event.x,event.y-55,15,"#ccff96",.8);beep(760,.12,"square",.025);}
+          if(event.kind==="impact"){ring(event.x,event.y-30,"#ffc187",110);if(cinematic)shake=Math.max(shake,8);beep(85,.12,"sawtooth",.04);}
+          if(event.kind==="shock"){ring(event.x,event.y-35,"#94eeff",340);burst(event.x,event.y-65,18,"#9aefff",1.2);beep(230,.16,"triangle",.035);}
+          if(event.kind==="expired"&&player)pop(player.x,player.y-150,"SUPPORT EXTRACTED","#c8ddf2");
+        }
+      });
+      const cameoView=new CameoPresentation(cameo,{
+        confirm:()=>{const intent=pendingCameoStart;if(!intent||!cameoView.ready||!cameoView.choice)return;cameo.stop();cameo.select(cameoView.choice);cameoView.close();pendingCameoStart=null;mode=intent.returnMode;start(intent.campaign,intent.retry);},
+        cancel:()=>{const intent=pendingCameoStart;cameoView.close();pendingCameoStart=null;if(intent){mode=intent.returnMode;if(mode==="playing")resumeMusic();}},
+        call:()=>summonCameo(),target:()=>cameo.cycleTarget(cameoContext())
+      });
+      function requestStart(campaign=campaignMode,retry=false){
+        if(retry&&cameo.selected&&cameoView.ready){start(campaign,true);return;}
+        pendingCameoStart={campaign,retry,returnMode:mode};keys.clear();if(mode==="playing")soundtrack.pause();mode="selecting";cameoView.open();
+      }
+      function summonCameo(){
+        if(mode!=="playing")return;
+        if(!cameo.summon(cameoContext())&&player)pop(player.x,player.y-150,phase==="boss"?"CAMEOS LOCKED · BOSS FIGHT":cameo.active?"SUPPORT ALREADY ACTIVE":cameo.used?"ONE ASSIST PER WAVE":"NO NORMAL TARGETS","#bcd1e7");
+        cameoView.updateHUD(cameoContext());
+      }
       const ACTOR_HEIGHT=136;
       const villainFrames=[],campaignFrames=[[],[]];
       const villainSheet=typeof Image === "function"?new Image():null;
@@ -336,7 +412,7 @@
         return{id:++uid,type,bossId,x,y,hp,maxHp:hp,face:-1,speed:type==="boss"?profile.speed:type==="heavy"?82:rand(95,128),range:type==="boss"?84:type==="heavy"?60:51,cooldown:rand(.35,1.2),windup:0,stun:0,flash:0,attackAnim:0,attackIndex:0,attackKind:"punch",moving:false,guardTime:0,rushTime:0,rushHit:false,rushFace:1,enraged:false,walk:rand(0,TAU),dead:false};
       }
       function spawnWave() {
-        wave++;phase="wave";nextWave=0;victoryDelay=0;entranceTimer=0;
+        wave++;phase="wave";cameo.resetWave(wave);nextWave=0;victoryDelay=0;entranceTimer=0;
         const roster=wave===1?["grunt","grunt","grunt"]:wave===2?["grunt","grunt","heavy","grunt","grunt"]:["heavy","grunt","grunt","heavy","grunt","grunt"];
         enemies=roster.map((type,i)=>{
           const side=i%2===0?1:-1;
@@ -347,7 +423,7 @@
         beep(180,.22,"sawtooth",.04);hud();
       }
       function spawnBoss(){
-        phase="boss";victoryDelay=0;
+        phase="boss";cameo.stop();victoryDelay=0;
         const entryX=player.x<W/2?760:200;
         const actor=enemy("boss",entryX,clamp(player.y,350,480));
         entranceTimer=cinematic?1.25:.55;actor.introTime=entranceTimer;actor.cooldown=entranceTimer+.35;
@@ -369,6 +445,8 @@
         hud();
       }
       function start(campaign=campaignMode,retry=false) {
+        if(!cameo.selected||!cameoView.ready){requestStart(campaign,retry);return;}
+        cameo.stop();
         if(spriteStatus!=="ready"){if(spriteStatus==="error")loadBossSprites();return;}
         const resumeWave=retry&&campaignMode?Math.max(0,wave-1):0;
         const resumeScore=retry?checkpointScore:0;
@@ -393,6 +471,7 @@
         $("overlay").classList.remove("hidden");$("campaign").hidden=mode==="paused";
       }
       function end(won) {
+        cameo.stop();
         mode=won?"won":"lost";
         if(won){
           cueMusic(null);
@@ -426,17 +505,17 @@
         const length=Math.hypot(x,y)||1;
         return{x:x/length,y:y/length};
       }
-      function hit(e,dmg,knock=32) {
+      function hit(e,dmg,knock=32,fromCameo=false) {
         if(e.dead)return;
-        if(e.guardTime>0&&dmg<60&&player.dashTime<=0){dmg=Math.ceil(dmg*.35);knock=8;pop(e.x,e.y-160,"BROTHER BLOCKS!","#f4b66c");}
-        if(cinematic){hitPause=.045;impactTime=.22;}
+        if(e.type==="boss"&&e.guardTime>0&&dmg<60&&player.dashTime<=0){dmg=Math.ceil(dmg*.35);knock=8;pop(e.x,e.y-160,"BROTHER BLOCKS!","#f4b66c");}
+        if(cinematic&&!fromCameo){hitPause=.045;impactTime=.22;}
         e.hp-=dmg;e.stun=e.type==="boss"?.11:.19;e.flash=.17;
         e.x=clamp(e.x+player.face*knock,32,926);
         score+=25+Math.min(combo,20)*5;combo++;comboTimer=2.4;
         player.rage=clamp(player.rage+11,0,100);
         burst(e.x,e.y-55,e.type==="boss"?18:13,"#ffd174");
         pop(e.x,e.y-107,String(dmg),"#ffe49a",dmg>=60);
-        shake=Math.max(shake,dmg>=60?9:4);beep(rand(95,160),.085,"sawtooth",.05);
+        shake=Math.max(shake,fromCameo?3:dmg>=60?9:4);beep(rand(95,160),.085,"sawtooth",.05);
         if(e.hp<=0){
           e.dead=true;
           if(e.type==="boss"){fallen.push({...e,fallTime:.85});victoryDelay=.85;if(cinematic)slowMotion=.7;}
@@ -504,6 +583,7 @@
         hud();
       }
       function hud(){
+        cameoView.updateHUD(cameoContext());
         if(!player)return;
         $("health-bar").style.width=player.hp+"%";
         $("health-text").textContent=player.hp+" / 100";
@@ -521,8 +601,9 @@
         specialBtn.title="Full energy: L / E or tap for sunglasses rocket fatality";
         specialBtn.style.filter=player.rage>=100?"drop-shadow(0 0 14px #ffc45a) brightness(1.35)":"";
       }
-      function update(dt){
+      function update(dt,cameoDt=dt){
         if(mode==="playing"){
+          cameo.update(cameoDt,cameoContext());
           const frozen=cinematic&&hitPause>0;
           hitPause=Math.max(0,hitPause-dt);impactTime=Math.max(0,impactTime-dt);slowMotion=Math.max(0,slowMotion-dt);
           if(frozen)dt=0;else if(cinematic&&slowMotion>0)dt*=.4;
@@ -634,6 +715,7 @@
         }
         enemies=enemies.filter(e=>!e.dead);
         if(enemies.length===0&&nextWave===0){
+          if(cameo.active){bannerText="WAVE SECURED · SUPPORT ON STATION";bannerTimer=.3;hud();return;}
           if(victoryDelay>0)return;
           if(phase==="wave")beginTransition("boss");
           else if(wave===3||!campaignMode){end(true);return;}
@@ -870,7 +952,7 @@
         cameraZoom+=(targetZoom-cameraZoom)*.12;
         const enteringBoss=entranceTimer>0?enemies.find(e=>e.type==="boss"):null;
         const focus=finisher?(player.x+finisher.target.x)/2:enteringBoss?(player.x+enteringBoss.x)/2:player?player.x:W/2;
-        const cx=clamp(focus,W/(2*cameraZoom),W-W/(2*cameraZoom));
+        const cx=clamp(focus,W/(2*cameraZoom),W-W/(2*cameraZoom));cameraCenterX=cx;
         ctx.translate(W/2,H/2);ctx.scale(cameraZoom,cameraZoom);ctx.translate(-cx,-H/2);
         if(cinematic&&shake>0)ctx.translate(rand(-shake,shake),rand(-shake*.5,shake*.5));
         background();
@@ -885,6 +967,7 @@
             ctx.fillStyle=glow;ctx.fillRect(player.x-120,player.y-170,240,240);ctx.globalAlpha=1;
           }
         }
+        cameoView.render(ctx,cameoContext(),clock,cinematic);
         drawActionTrails();drawFinisher();drawEffects();ctx.restore();
         drawTransition();
         const bars=cinematic&&(finisher||transition||entranceTimer>0)?24:5;
@@ -892,15 +975,16 @@
       }
       function animate(now){
         // Keep combat at real-time speed on slower phones, with small collision steps.
-        let remaining=Math.min(.1,(now-last)/1000||.016);last=now;
-        while(remaining>0){const step=Math.min(.025,remaining);update(step);remaining-=step;}
+        const elapsed=Math.max(0,(now-last)/1000||.016);last=now;
+        let remaining=Math.min(.1,elapsed);const supportClockRatio=remaining?elapsed/remaining:1;
+        while(remaining>0){const step=Math.min(.025,remaining);update(step,step*supportClockRatio);remaining-=step;}
         draw();requestAnimationFrame(animate);
       }
       const normalize=(key)=>{
         const k=key.toLowerCase();
         return k===" "?"j":k==="shift"?"k":k==="e"?"l":k;
       };
-      const playable=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright","j","k","i","l","r","p","escape"]);
+      const playable=new Set(["w","a","s","d","arrowup","arrowdown","arrowleft","arrowright","j","k","i","l","r","c","t","p","escape"]);
       document.addEventListener("keydown",(event)=>{
         const k=normalize(event.key);
         if(!playable.has(k))return;
@@ -908,11 +992,12 @@
         if(k==="p"||k==="escape"){if(!event.repeat)pause();return;}
         if(mode!=="playing")return;
         if(!event.repeat&&!keys.has(k))finisherInput(k);
-        if(!keys.has(k)){if(k==="j")punch();if(k==="k")dash();if(k==="l")special();}
+        if(!keys.has(k)){if(k==="j")punch();if(k==="k")dash();if(k==="l")special();if(k==="c")summonCameo();if(k==="t")cameo.cycleTarget(cameoContext());}
         keys.add(k);
       });
       document.addEventListener("keyup",(event)=>keys.delete(normalize(event.key)));
       window.addEventListener("blur",()=>keys.clear());
+      document.addEventListener("visibilitychange",()=>{if(document.hidden&&mode==="playing")pause();});
       document.querySelectorAll("[data-control]").forEach((button)=>{
         const key=button.dataset.control;
         const release=()=>{keys.delete(key);button.classList.remove("pressed");};
@@ -927,10 +1012,10 @@
         button.addEventListener("lostpointercapture",release);
         button.addEventListener("contextmenu",(event)=>event.preventDefault());
       });
-      $("main-button").addEventListener("click",()=>{if(mode==="paused")pause();else start(campaignMode,mode==="lost");});
+      $("main-button").addEventListener("click",()=>{if(mode==="paused")pause();else requestStart(campaignMode,mode==="lost");});
       $("pause").addEventListener("click",()=>{if(mode==="playing"||mode==="paused")pause();});
-      $("restart").addEventListener("click",()=>start());
-      $("campaign").addEventListener("click",()=>start(false));
+      $("restart").addEventListener("click",()=>requestStart());
+      $("campaign").addEventListener("click",()=>requestStart(false));
       $("cinema").textContent=cinematic?"Cinema On":"Cinema Off";
       $("cinema").setAttribute("aria-pressed",String(cinematic));
       $("cinema").addEventListener("click",()=>{
@@ -957,6 +1042,8 @@
         $("fullscreen").textContent=document.fullscreenElement?"⤢ Exit fullscreen":"⛶ Fullscreen";
       });
       $("stage").addEventListener("pointerdown",(event)=>{if(event.target===canvas)$("stage").focus({preventScroll:true});});
+      canvas.addEventListener("pointerdown",event=>cameoView.pickTarget(event,canvas,cameoContext(),cameraZoom,cameraCenterX));
+      cameoView.updateHUD(cameoContext());
       requestAnimationFrame(animate);
     })();
   </script>
