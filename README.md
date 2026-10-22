@@ -4,10 +4,10 @@ A browser arcade brawler starring Thalaivar against Bodhi Kalpak.
 
 ## Play
 
-Serve the game directory with any static web server:
+Serve the game with the included media-aware development server (byte-range requests keep the ending music and title video seekable):
 
 ```sh
-python3 -m http.server 8000 --directory Mass-Hero-Soundtrack-Edition
+python3 Mass-Hero-Soundtrack-Edition/serve.py --port 8000
 ```
 
 Choose **Start 3-level campaign**, then select exactly one cameo before entering the continuous run:
@@ -31,6 +31,12 @@ Press **C** or tap **Summon** for one assist per normal wave. Each assist stays 
 
 Cameos cannot be summoned during boss phases or transitions. Boss enemies are excluded from every cameo damage path, including AoE attacks and vehicle collisions. Thalaivar's existing rocket fatality remains separate and can still defeat bosses. Pausing or opening the restart selection screen freezes the assist clock; restarting or ending a run clears existing helpers.
 
+## Final victory cinematic
+
+After the last wave and Bodhi Kalpak are defeated, a 28.76-second victory sequence plays before the score screen: a sunglasses reveal, explosions, Thalaivar adjusting his glasses, a slow close-up, then the original **SUPER STAR / RAJINI** title-card segment from the supplied reference video.
+
+The ending uses the uploaded video's original AAC audio track, including its embedded sound effects. Audio playback drives the visual timeline so the title card lands at the reference cut (23.37 seconds). Gameplay music pauses for the ending. **Pause** freezes both picture and music; **Skip cinematic** goes straight to results. Muting music keeps the visual sequence running, and reduced-motion mode uses steady framing and a static title treatment. If the browser blocks ending audio, **Play ending music** retries it; **Continue muted** is available as a fallback.
+
 ## Controls
 
 - **WASD / arrows:** move.
@@ -53,5 +59,5 @@ Pushing to GitHub updates the source. A live Vercel update still requires a succ
 ## Combat-rule tests
 
 ```sh
-node --test Mass-Hero-Soundtrack-Edition/tests/cameo-support.test.cjs
+node --test Mass-Hero-Soundtrack-Edition/tests/*.test.cjs
 ```

@@ -178,6 +178,14 @@
       .cameo-strip {position:absolute;bottom:110px;left:12px;width:min(370px,55%);z-index:12;border:1px solid #40506b;background:#0d1728d9;padding:6px 8px}
       .cameo-strip button {min-height:34px}
     }
+    .ending-controls {position:absolute;bottom:12px;right:12px;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end;z-index:7;max-width:90%}
+    .ending-controls[hidden] {display:none}
+    .ending-controls button {min-height:36px;padding:8px 12px;border:1px solid #c9b18880;border-radius:5px;background:#0e1627d9;color:#ffe3ad;font-size:10px;font-weight:850}
+    #stage.victory-cinematic .hud,#stage.victory-cinematic .boss-hud,#stage.victory-cinematic #wave-banner,#stage.victory-cinematic #combo,#stage.victory-cinematic #flash {visibility:hidden}
+    .ending-mode #cameo-strip,.ending-mode .touch,.ending-mode .controls-text {display:none}
+    .ending-mode .toolbar {justify-content:center;min-height:48px}
+    .ending-mode .stage {width:min(100%,calc((100dvh - 170px)*16/9))}
+    @media(orientation:landscape) and (max-height:570px) and (pointer:coarse){.ending-mode .stage {width:100%;height:100%}}
   </style>
 </head>
 <body>
@@ -201,6 +209,7 @@
         <div id="combo" aria-live="off"></div><div id="wave-banner"></div>
         <div class="boss-hud" id="boss-hud"><div><strong>BODHI KALPAK</strong><span>FINAL BOSS</span></div><div class="meter"><div id="boss-bar"></div></div></div>
         <div id="flash"></div>
+        <div class="ending-controls" id="ending-controls" hidden><button id="ending-audio" hidden>Play ending music</button><button id="ending-silent" hidden>Continue muted</button><button id="ending-skip">Skip cinematic →</button></div>
         <div class="overlay" id="overlay">
           <span class="eyebrow" id="eyebrow">A ONE-HERO ARCADE EXPERIENCE</span>
           <h2 id="overlay-title">THE CITY<br><em>NEEDS A HERO.</em></h2>
@@ -240,6 +249,7 @@
   </section>
   </div>
   <audio id="soundtrack" preload="metadata" playsinline aria-label="Game background music"></audio>
+  <script src="victory-sequence.js"></script>
   <script src="cameo-support.js"></script>
   <script src="cameo-presentation.js"></script>
   <script>
@@ -257,7 +267,7 @@
       let bannerText = "", clock = 0, shake = 0, flash = 0, last = performance.now(), soundOn = true, audioContext;
       let musicWanted = true, musicTrack = null, seekOnLoad = null;
       const soundtrack = $("soundtrack");
-      const musicFiles = {fight:"assets/jailer2-theme.mp3",lost:"assets/netru-ponavai.mp3"};
+      const musicFiles = {fight:"assets/jailer2-theme.mp3",lost:"assets/netru-ponavai.mp3",victory:"assets/victory-reference-bgm.m4a"};
       let uid = 0;
       let campaignMode=true, spriteStatus="loading", checkpointScore=0, checkpointPhase="wave";
       let phase="wave", transition=null, entranceTimer=0;
@@ -271,6 +281,15 @@
       let cinematic = !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       let hitPause=0, impactTime=0, slowMotion=0, cameraZoom=1,cameraCenterX=W/2;
       let pendingCameoStart=null;
+      let victoryPlayed=false,pausedMode="playing";
+      const victorySequence=new MassHeroVictory.VictorySequence({loadAssets:false,complete:()=>end(true)});
+      function showEndingAudioAction(){if(victorySequence.active&&musicWanted){$("ending-audio").hidden=false;$("ending-silent").hidden=false;}}
+      function resetVictory(){victorySequence.reset();victoryPlayed=false;pausedMode="playing";$("stage").classList.remove("victory-cinematic");$("app").classList.remove("ending-mode");$("ending-controls").hidden=true;$("ending-audio").hidden=true;$("ending-silent").hidden=true;}
+      function beginVictory(){
+        victorySequence.load();victoryPlayed=true;cameo.stop();keys.clear();finisher=null;transition=null;shake=0;flash=0;mode="ending";
+        victorySequence.start({reducedMotion:!cinematic});$("overlay").classList.add("hidden");$("stage").classList.add("victory-cinematic");$("app").classList.add("ending-mode");$("ending-controls").hidden=false;
+        $("pause").textContent="Ⅱ Pause";cueMusic("victory");hud();
+      }
       const cameoContext=()=>({mode,phase,transition:!!transition,enemies,player,width:W,height:H});
       const cameo=new MassHeroCameos.CameoSupport({
         dealDamage:(enemy,amount)=>{if(cameo.active&&phase==="wave"&&MassHeroCameos.isMob(enemy))hit(enemy,amount,0,true);},
@@ -284,12 +303,12 @@
       });
       const cameoView=new CameoPresentation(cameo,{
         confirm:()=>{const intent=pendingCameoStart;if(!intent||!cameoView.ready||!cameoView.choice)return;cameo.stop();cameo.select(cameoView.choice);cameoView.close();pendingCameoStart=null;mode=intent.returnMode;start(intent.campaign,intent.retry);},
-        cancel:()=>{const intent=pendingCameoStart;cameoView.close();pendingCameoStart=null;if(intent){mode=intent.returnMode;if(mode==="playing")resumeMusic();}},
+        cancel:()=>{const intent=pendingCameoStart;cameoView.close();pendingCameoStart=null;if(intent){mode=intent.returnMode;if(mode==="playing"||mode==="ending")resumeMusic();}},
         call:()=>summonCameo(),target:()=>cameo.cycleTarget(cameoContext())
       });
       function requestStart(campaign=campaignMode,retry=false){
         if(retry&&cameo.selected&&cameoView.ready){start(campaign,true);return;}
-        pendingCameoStart={campaign,retry,returnMode:mode};keys.clear();if(mode==="playing")soundtrack.pause();mode="selecting";cameoView.open();
+        pendingCameoStart={campaign,retry,returnMode:mode};keys.clear();if(mode==="playing"||mode==="ending")soundtrack.pause();if(mode==="ending")victorySequence.pause();mode="selecting";cameoView.open();
       }
       function summonCameo(){
         if(mode!=="playing")return;
@@ -376,14 +395,14 @@
       }
       function resumeMusic() {
         if (!musicWanted || !musicTrack || typeof soundtrack.play !== "function") return;
-        if ((musicTrack==="fight"&&mode!=="playing") || (musicTrack==="lost"&&mode!=="lost")) return;
+        if ((musicTrack==="fight"&&mode!=="playing") || (musicTrack==="lost"&&mode!=="lost") || (musicTrack==="victory"&&mode!=="ending")) return;
         if (seekOnLoad!==null && soundtrack.readyState<1) return;
         if (seekOnLoad!==null) {
           try { soundtrack.currentTime=Math.min(seekOnLoad,Math.max(0,soundtrack.duration-.1)); } catch (_) {}
           seekOnLoad=null;
         }
         const playPromise=soundtrack.play();
-        if (playPromise && typeof playPromise.catch==="function") playPromise.catch(()=>{});
+        if (playPromise && typeof playPromise.catch==="function") playPromise.catch(()=>{if(musicTrack==="victory")showEndingAudioAction();});
       }
       function cueMusic(track, startAt=0) {
         musicTrack=track;
@@ -392,12 +411,15 @@
         if(!track)return;
         soundtrack.src=musicFiles[track];
         soundtrack.loop=track==="fight";
-        soundtrack.volume=track==="fight"?.52:.65;
+        soundtrack.volume=track==="fight"?.52:track==="victory"?.72:.65;
         seekOnLoad=startAt;
         soundtrack.load();
         resumeMusic();
       }
       soundtrack.addEventListener("loadedmetadata",resumeMusic);
+      soundtrack.addEventListener("playing",()=>{if(musicTrack==="victory"){$("ending-audio").hidden=true;$("ending-silent").hidden=true;}});
+      soundtrack.addEventListener("error",()=>{if(musicTrack==="victory")showEndingAudioAction();});
+      soundtrack.addEventListener("ended",()=>{if(mode==="ending"&&musicTrack==="victory")victorySequence.finish();});
       function burst(x,y,count,color,power=1) {
         for(let i=0;i<count;i++){
           const a=rand(0,TAU),speed=rand(45,240)*power,life=rand(.25,.65);
@@ -412,7 +434,7 @@
         return{id:++uid,type,bossId,x,y,hp,maxHp:hp,face:-1,speed:type==="boss"?profile.speed:type==="heavy"?82:rand(95,128),range:type==="boss"?84:type==="heavy"?60:51,cooldown:rand(.35,1.2),windup:0,stun:0,flash:0,attackAnim:0,attackIndex:0,attackKind:"punch",moving:false,guardTime:0,rushTime:0,rushHit:false,rushFace:1,enraged:false,walk:rand(0,TAU),dead:false};
       }
       function spawnWave() {
-        wave++;phase="wave";cameo.resetWave(wave);nextWave=0;victoryDelay=0;entranceTimer=0;
+        wave++;if(wave===3)victorySequence.load();phase="wave";cameo.resetWave(wave);nextWave=0;victoryDelay=0;entranceTimer=0;
         const roster=wave===1?["grunt","grunt","grunt"]:wave===2?["grunt","grunt","heavy","grunt","grunt"]:["heavy","grunt","grunt","heavy","grunt","grunt"];
         enemies=roster.map((type,i)=>{
           const side=i%2===0?1:-1;
@@ -423,6 +445,7 @@
         beep(180,.22,"sawtooth",.04);hud();
       }
       function spawnBoss(){
+        if(wave===3)victorySequence.load();
         phase="boss";cameo.stop();victoryDelay=0;
         const entryX=player.x<W/2?760:200;
         const actor=enemy("boss",entryX,clamp(player.y,350,480));
@@ -446,7 +469,7 @@
       }
       function start(campaign=campaignMode,retry=false) {
         if(!cameo.selected||!cameoView.ready){requestStart(campaign,retry);return;}
-        cameo.stop();
+        cameo.stop();resetVictory();
         if(spriteStatus!=="ready"){if(spriteStatus==="error")loadBossSprites();return;}
         const resumeWave=retry&&campaignMode?Math.max(0,wave-1):0;
         const resumeScore=retry?checkpointScore:0;
@@ -471,7 +494,9 @@
         $("overlay").classList.remove("hidden");$("campaign").hidden=mode==="paused";
       }
       function end(won) {
-        cameo.stop();
+        if(won&&(wave!==3||phase!=="boss"||enemies.some(enemy=>!enemy.dead)))return;
+        if(won&&!victoryPlayed){beginVictory();return;}
+        cameo.stop();victorySequence.pause();$("stage").classList.remove("victory-cinematic");$("app").classList.remove("ending-mode");$("ending-controls").hidden=true;
         mode=won?"won":"lost";
         if(won){
           cueMusic(null);
@@ -487,12 +512,12 @@
         hud();
       }
       function pause() {
-        if(mode==="playing"){
-          mode="paused";keys.clear();soundtrack.pause();
+        if(mode==="playing"||mode==="ending"){
+          pausedMode=mode;mode="paused";keys.clear();soundtrack.pause();victorySequence.pause();$("ending-controls").hidden=true;
           showOverlay("TAKE A <em>BREATH.</em>","The streets can wait. Your legend cannot.","▶ RESUME FIGHT","GAME PAUSED");
           $("pause").textContent="▶ Resume";
         } else if(mode==="paused"){
-          mode="playing";$("overlay").classList.add("hidden");resumeMusic();
+          mode=pausedMode;$("overlay").classList.add("hidden");$("ending-controls").hidden=mode!=="ending";resumeMusic();
           $("pause").textContent="Ⅱ Pause";$("stage").focus({preventScroll:true});
         }
       }
@@ -602,6 +627,7 @@
         specialBtn.style.filter=player.rage>=100?"drop-shadow(0 0 14px #ffc45a) brightness(1.35)":"";
       }
       function update(dt,cameoDt=dt){
+        if(mode==="ending")victorySequence.update(cameoDt,musicWanted&&musicTrack==="victory"?soundtrack.currentTime:null);
         if(mode==="playing"){
           cameo.update(cameoDt,cameoContext());
           const frozen=cinematic&&hitPause>0;
@@ -947,6 +973,7 @@
         ctx.font="700 12px system-ui";ctx.fillStyle="#a8cfde";ctx.fillText("KEEP MOVING · THE FIGHT CONTINUES",W/2,252);ctx.restore();
       }
       function draw(){
+        if(victorySequence.active&&(mode==="ending"||mode==="paused"||mode==="selecting")){victorySequence.render(ctx,W,H);return;}
         ctx.save();
         const targetZoom=cinematic&&mode==="playing"?(finisher?1.16:entranceTimer>0?1.10:transition?1.035:impactTime>0?1.045:1):1;
         cameraZoom+=(targetZoom-cameraZoom)*.12;
@@ -988,7 +1015,7 @@
       document.addEventListener("keydown",(event)=>{
         const k=normalize(event.key);
         if(!playable.has(k))return;
-        if(mode==="playing"||mode==="paused")event.preventDefault();
+        if(mode==="playing"||mode==="paused"||mode==="ending")event.preventDefault();
         if(k==="p"||k==="escape"){if(!event.repeat)pause();return;}
         if(mode!=="playing")return;
         if(!event.repeat&&!keys.has(k))finisherInput(k);
@@ -997,7 +1024,7 @@
       });
       document.addEventListener("keyup",(event)=>keys.delete(normalize(event.key)));
       window.addEventListener("blur",()=>keys.clear());
-      document.addEventListener("visibilitychange",()=>{if(document.hidden&&mode==="playing")pause();});
+      document.addEventListener("visibilitychange",()=>{if(document.hidden&&(mode==="playing"||mode==="ending"))pause();});
       document.querySelectorAll("[data-control]").forEach((button)=>{
         const key=button.dataset.control;
         const release=()=>{keys.delete(key);button.classList.remove("pressed");};
@@ -1013,13 +1040,13 @@
         button.addEventListener("contextmenu",(event)=>event.preventDefault());
       });
       $("main-button").addEventListener("click",()=>{if(mode==="paused")pause();else requestStart(campaignMode,mode==="lost");});
-      $("pause").addEventListener("click",()=>{if(mode==="playing"||mode==="paused")pause();});
+      $("pause").addEventListener("click",()=>{if(mode==="playing"||mode==="paused"||mode==="ending")pause();});
       $("restart").addEventListener("click",()=>requestStart());
       $("campaign").addEventListener("click",()=>requestStart(false));
       $("cinema").textContent=cinematic?"Cinema On":"Cinema Off";
       $("cinema").setAttribute("aria-pressed",String(cinematic));
       $("cinema").addEventListener("click",()=>{
-        cinematic=!cinematic;$("cinema").textContent=cinematic?"Cinema On":"Cinema Off";
+        cinematic=!cinematic;victorySequence.reducedMotion=!cinematic;if(!cinematic)victorySequence.pause();$("cinema").textContent=cinematic?"Cinema On":"Cinema Off";
         $("cinema").setAttribute("aria-pressed",String(cinematic));
         if(!cinematic){hitPause=0;slowMotion=0;impactTime=0;cameraZoom=1;}
       });
@@ -1030,8 +1057,11 @@
       $("music").addEventListener("click",()=>{
         musicWanted=!musicWanted;
         $("music").textContent=musicWanted?"♫ BGM On":"♫ BGM Off";
-        if(musicWanted)resumeMusic();else soundtrack.pause();
+        if(musicWanted){if(mode==="ending"&&musicTrack==="victory")seekOnLoad=victorySequence.elapsed;resumeMusic();}else{soundtrack.pause();$("ending-audio").hidden=true;$("ending-silent").hidden=true;}
       });
+      $("ending-skip").addEventListener("click",()=>{if(victorySequence.active)victorySequence.finish();});
+      $("ending-audio").addEventListener("click",()=>{if(mode==="ending"){musicWanted=true;$("music").textContent="♫ BGM On";cueMusic("victory",victorySequence.elapsed);}});
+      $("ending-silent").addEventListener("click",()=>{musicWanted=false;soundtrack.pause();$("music").textContent="♫ BGM Off";$("ending-audio").hidden=true;$("ending-silent").hidden=true;});
       $("fullscreen").addEventListener("click",async()=>{
         try {
           if(document.fullscreenElement)await document.exitFullscreen();
