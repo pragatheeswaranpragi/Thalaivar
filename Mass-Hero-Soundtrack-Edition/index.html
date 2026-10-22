@@ -85,6 +85,8 @@
     .actions button.pressed {transform:scale(.92);filter:brightness(1.2)}
     .footer {color:#68768e;font-size:9px;letter-spacing:1.2px;font-weight:850;display:flex;justify-content:space-between;gap:10px;padding:8px clamp(16px,3vw,36px) 14px}
     .footer span:first-child {color:#c7a977}
+    .footer a {color:inherit;text-decoration:underline;text-underline-offset:3px}
+    .footer a:hover,.footer a:focus-visible {color:#ffe0a0}
     @media(max-width:720px),(pointer:coarse) {
       .touch {display:flex}
       .play-area {flex:0 auto}
@@ -243,7 +245,7 @@
         <button id="cinema" aria-pressed="true">Cinema On</button><button id="sound">♪ Effects On</button><button id="pause">Ⅱ Pause</button><button id="restart">↻ Restart</button>
       </div>
     </div>
-    <footer class="footer"><span>★ CONTINUOUS CAMPAIGN · WAVE → BOSS → NEXT WAVE</span><span>MADE FOR PRAGATHEES · 2026</span></footer>
+    <footer class="footer"><span>★ CONTINUOUS CAMPAIGN · WAVE → BOSS → NEXT WAVE</span><span><a href="https://pragatheeswaran.vercel.app/" target="_blank" rel="noopener noreferrer">Developed By Pragatheeswaran Kasinathan</a></span></footer>
   <section class="cameo-picker" id="cameo-picker" hidden role="dialog" aria-modal="true" aria-labelledby="cameo-picker-title">
     <div class="cameo-dialog"><span class="eyebrow">THALAIVAR DOESN’T FIGHT ALONE</span><h2 id="cameo-picker-title">CHOOSE YOUR CAMEO</h2><p>Choose exactly one ally. Each summon lasts 10 seconds, once per normal wave. Cameos cannot be used in boss fights.</p><div class="cameo-cards" id="cameo-cards" role="radiogroup" aria-label="Cameo character"></div><div class="cameo-actions"><p id="cameo-selection-status" aria-live="polite">Choose one ally to join Thalaivar.</p><button id="cameo-cancel">Back</button><button id="cameo-confirm" disabled>SELECT ONE CAMEO</button></div></div>
   </section>
