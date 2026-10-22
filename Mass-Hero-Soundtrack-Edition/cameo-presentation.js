@@ -98,8 +98,8 @@
     updateHUD(c){
       const r=ROSTER.find(r=>r.id===this.support.selected),a=this.support.active;
       $("cameo-name").textContent=r?r.name+" · "+r.ability:"CAMEO SUPPORT";
-      $("cameo-state").textContent=!r?"Pick one ally before play":c.phase==="boss"?"Boss duel · support locked":a?(Math.ceil(a.remaining*10)/10).toFixed(1)+"s remaining · normal waves only":this.support.used?"Used this wave · recharges next wave":"10 seconds · once per wave · C to summon";
-      $("cameo-call").disabled=!this.ready||!this.support.canSummon(c);$("cameo-call").textContent=a?"SUPPORT ACTIVE":c.phase==="boss"?"BOSS LOCKED":"C · SUMMON";
+      $("cameo-state").textContent=!r?"Pick one ally before play":c.celebration?"Victory celebration · wave 2 is next":c.phase==="boss"?"Boss duel · support locked":a?(Math.ceil(a.remaining*10)/10).toFixed(1)+"s remaining · normal waves only":this.support.used?"Used this wave · recharges next wave":"10 seconds · once per wave · C to summon";
+      $("cameo-call").disabled=!this.ready||!this.support.canSummon(c);$("cameo-call").textContent=a?"SUPPORT ACTIVE":c.celebration?"CELEBRATING":c.phase==="boss"?"BOSS LOCKED":"C · SUMMON";
       $("cameo-target").hidden=this.support.selected!=="narasimha";$("cameo-target").disabled=c.mode!=="playing"||c.phase!=="wave"||!this.support.targets(c).length;
       $("cameo-meter").style.width=a?a.remaining/10*100+"%":this.support.used?"0%":"100%";
       $("cameo-strip").style.setProperty("--cameo-color",r?r.color:"#8492b0");

@@ -3,7 +3,7 @@
   "use strict";
   const DURATION=10;
   const ROSTER=[
-    {id:"narasimha",name:"Narasimha",ability:"Sniper Support",description:"Lock a target. Off-screen sniper rounds instantly eliminate normal enemies.",color:"#b8e39a",frame:0},
+    {id:"narasimha",name:"Narasimha",ability:"Sniper Support",description:"Lock a target. Each off-screen sniper shot eliminates up to three normal enemies.",color:"#b8e39a",frame:0},
     {id:"mathew",name:"Mathew",ability:"Vehicular Impact",description:"A heavy SUV sweeps the street, crushing enemy groups in its path.",color:"#ffb183",frame:1},
     {id:"hrithik",name:"Hrithik",ability:"Strike Team",description:"Hrithik lays down rifle bursts while three female fighters rush in with punches and kicks.",color:"#d5adff",frame:2},
     {id:"pragi",name:"Pragi",ability:"Martial Arts",description:"Pragi runs into close combat with flowing jabs, crosses, elbows and roundhouse kicks.",color:"#89eaff",frame:3}
@@ -69,10 +69,15 @@
         if(a.id==="narasimha"){
           a.target=this.target(c);
           while(a.nextPulse<=end&&a.nextPulse<DURATION){
-            const e=this.target(c);
-            if(e&&this.damage(e,e.hp,c)){
-              a.effects.push({kind:"sniper",x:e.x,y:e.y-55,fromX:c.player.face>0?-80:c.width+80,age:0,duration:.22});
-              this.emit({kind:"sniper",x:e.x,y:e.y});if(this.targetId===e.id)this.targetId=null;
+            const primary=this.target(c);
+            if(primary){
+              const targets=[primary,...this.targets(c).filter(e=>e!==primary).sort((x,y)=>Math.hypot(x.x-primary.x,x.y-primary.y)-Math.hypot(y.x-primary.x,y.y-primary.y))].slice(0,3);
+              const fromX=c.player.face>0?-80:c.width+80;
+              let previous=null;
+              for(const e of targets)if(this.damage(e,e.hp,c)){
+                a.effects.push({kind:"sniper",x:e.x,y:e.y-55,fromX:previous?previous.x:fromX,fromY:previous?previous.y-55:e.y-73,age:0,duration:.22});
+                this.emit({kind:"sniper",x:e.x,y:e.y});if(this.targetId===e.id)this.targetId=null;previous=e;
+              }
             }
             a.nextPulse+=1.25;
           }

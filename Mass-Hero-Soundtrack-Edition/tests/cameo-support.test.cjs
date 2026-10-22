@@ -38,9 +38,19 @@ for(const id of ROSTER.map(r=>r.id)){
   const {support,context,hits}=fixture(id);support.summon(context);support.update(5,{...context,phase:'boss'});assert.equal(hits.length,0);support.update(5,{...context,phase:'boss'});assert.equal(support.active,null);
  });
 }
-test('sniper instantly kills the selected normal enemy and fires from off-screen',()=>{
- const {support,context,hits}=fixture('narasimha',[mob(1),mob(2,400,420,999)]);support.cycleTarget(context);support.cycleTarget(context);assert.equal(support.targetId,2);
- support.summon(context);support.update(.6,context);assert.deepEqual(hits,[{id:2,amount:999}]);assert.equal(context.enemies[0].hp,100);assert(support.active.effects[0].fromX<0);
+test('one sniper shot kills the selected enemy plus its two nearest normal allies',()=>{
+ const {support,context,hits,events}=fixture('narasimha',[mob(1),mob(2,400,420,999),mob(3,500),mob(4,850)]);
+ support.cycleTarget(context);support.cycleTarget(context);assert.equal(support.targetId,2);
+ support.summon(context);support.update(.6,context);
+ assert.deepEqual(hits,[{id:2,amount:999},{id:1,amount:100},{id:3,amount:100}]);assert.equal(context.enemies[3].hp,100);
+ assert(support.active.effects[0].fromX<0);assert.equal(events.filter(e=>e.kind==='sniper').length,3);
+ support.update(1.25,context);assert.equal(context.enemies[3].dead,true);
+});
+test('sniper safely fires when fewer than three normal enemies remain',()=>{
+ for(const count of [1,2]){
+  const {support,context,hits}=fixture('narasimha',Array.from({length:count},(_,i)=>mob(i+1,320+i*40)));
+  support.summon(context);support.update(.6,context);assert.equal(hits.length,count);assert(context.enemies.every(e=>e.dead));
+ }
 });
 test('Mathew swept vehicle collision damages multiple normal enemies only in its lane',()=>{
  const {support,context,hits}=fixture('mathew',[mob(1,200),mob(2,400),mob(3,350,700)]);support.summon(context);support.update(1,context);
